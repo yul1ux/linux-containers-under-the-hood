@@ -1,0 +1,118 @@
+{
+  "chapters": [
+    {
+      "number": 1,
+      "part": 1,
+      "title": "Understanding Containers",
+      "path": "part-01-fundamentals/chapter-01-understanding-containers.md"
+    },
+    {
+      "number": 2,
+      "part": 1,
+      "title": "Linux Processes and System Calls",
+      "path": "part-01-fundamentals/chapter-02-linux-processes-and-system-calls.md"
+    },
+    {
+      "number": 3,
+      "part": 2,
+      "title": "Linux Namespaces",
+      "path": "part-02-kernel-isolation/chapter-03-linux-namespaces.md"
+    },
+    {
+      "number": 4,
+      "part": 2,
+      "title": "Control Groups",
+      "path": "part-02-kernel-isolation/chapter-04-control-groups.md"
+    },
+    {
+      "number": 5,
+      "part": 2,
+      "title": "Linux Capabilities and Privilege Model",
+      "path": "part-02-kernel-isolation/chapter-05-linux-capabilities-and-privilege-model.md"
+    },
+    {
+      "number": 6,
+      "part": 2,
+      "title": "Container Filesystem Isolation",
+      "path": "part-02-kernel-isolation/chapter-06-container-filesystem-isolation.md"
+    },
+    {
+      "number": 7,
+      "part": 3,
+      "title": "OverlayFS and Container Image Storage",
+      "path": "part-03-filesystem-networking/chapter-07-overlayfs-and-container-image-storage.md"
+    },
+    {
+      "number": 8,
+      "part": 3,
+      "title": "Container Networking Internals",
+      "path": "part-03-filesystem-networking/chapter-08-container-networking-internals.md"
+    },
+    {
+      "number": 9,
+      "part": 4,
+      "title": "OCI Image Specification",
+      "path": "part-04-runtime-internals/chapter-09-oci-image-specification.md"
+    },
+    {
+      "number": 10,
+      "part": 4,
+      "title": "OCI Runtime Specification",
+      "path": "part-04-runtime-internals/chapter-10-oci-runtime-specification.md"
+    },
+    {
+      "number": 11,
+      "part": 4,
+      "title": "runc and crun",
+      "path": "part-04-runtime-internals/chapter-11-runc-and-crun.md"
+    },
+    {
+      "number": 12,
+      "part": 4,
+      "title": "containerd and containerd-shim",
+      "path": "part-04-runtime-internals/chapter-12-containerd-and-containerd-shim.md"
+    },
+    {
+      "number": 13,
+      "part": 4,
+      "title": "Docker Engine Internals",
+      "path": "part-04-runtime-internals/chapter-13-docker-engine-internals.md"
+    },
+    {
+      "number": 14,
+      "part": 5,
+      "title": "Container Security Mechanisms",
+      "path": "part-05-security-operations/chapter-14-container-security-mechanisms.md"
+    },
+    {
+      "number": 15,
+      "part": 5,
+      "title": "Rootless Containers",
+      "path": "part-05-security-operations/chapter-15-rootless-containers.md"
+    },
+    {
+      "number": 16,
+      "part": 5,
+      "title": "Container Operations and Troubleshooting",
+      "path": "part-05-security-operations/chapter-16-container-operations-and-troubleshooting.md"
+    },
+    {
+      "number": 17,
+      "part": 6,
+      "title": "Podman Internals",
+      "path": "part-06-ecosystem-capstone/chapter-17-podman-internals.md"
+    },
+    {
+      "number": 18,
+      "part": 6,
+      "title": "Kubernetes Container Runtime Architecture",
+      "path": "part-06-ecosystem-capstone/chapter-18-kubernetes-container-runtime-architecture.md"
+    },
+    {
+      "number": 19,
+      "part": 6,
+      "title": "Build Your Own Linux Container Runtime in Go",
+      "path": "part-06-ecosystem-capstone/chapter-19-build-your-own-linux-container-runtime-in-go.md"
+    }
+  ]
+}

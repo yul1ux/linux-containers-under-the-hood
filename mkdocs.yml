@@ -1,0 +1,73 @@
+site_name: Linux Containers Under the Hood
+site_url: https://yul1ux.github.io/linux-containers-under-the-hood/
+repo_url: https://github.com/yul1ux/linux-containers-under-the-hood
+repo_name: yul1ux/linux-containers-under-the-hood
+docs_dir: docs
+site_dir: site
+use_directory_urls: true
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.sections
+    - navigation.top
+    - toc.follow
+    - content.code.copy
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+plugins:
+  - search
+markdown_extensions:
+  - admonition
+  - attr_list
+  - footnotes
+  - md_in_html
+  - tables
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - toc:
+      permalink: true
+nav:
+  - Home: index.md
+  - Preface: preface.md
+  - Before You Begin: before-you-begin.md
+  - Part I — Container Fundamentals:
+      - Chapter 1: part-01-fundamentals/chapter-01-understanding-containers.md
+      - Chapter 2: part-01-fundamentals/chapter-02-linux-processes-and-system-calls.md
+  - Part II — Linux Kernel and Isolation:
+      - Chapter 3: part-02-kernel-isolation/chapter-03-linux-namespaces.md
+      - Chapter 4: part-02-kernel-isolation/chapter-04-control-groups.md
+      - Chapter 5: part-02-kernel-isolation/chapter-05-linux-capabilities-and-privilege-model.md
+      - Chapter 6: part-02-kernel-isolation/chapter-06-container-filesystem-isolation.md
+  - Part III — Filesystem and Networking:
+      - Chapter 7: part-03-filesystem-networking/chapter-07-overlayfs-and-container-image-storage.md
+      - Chapter 8: part-03-filesystem-networking/chapter-08-container-networking-internals.md
+  - Part IV — OCI and Container Runtime Internals:
+      - Chapter 9: part-04-runtime-internals/chapter-09-oci-image-specification.md
+      - Chapter 10: part-04-runtime-internals/chapter-10-oci-runtime-specification.md
+      - Chapter 11: part-04-runtime-internals/chapter-11-runc-and-crun.md
+      - Chapter 12: part-04-runtime-internals/chapter-12-containerd-and-containerd-shim.md
+      - Chapter 13: part-04-runtime-internals/chapter-13-docker-engine-internals.md
+  - Part V — Security and Operations:
+      - Chapter 14: part-05-security-operations/chapter-14-container-security-mechanisms.md
+      - Chapter 15: part-05-security-operations/chapter-15-rootless-containers.md
+      - Chapter 16: part-05-security-operations/chapter-16-container-operations-and-troubleshooting.md
+  - Part VI — Ecosystem and Capstone:
+      - Chapter 17: part-06-ecosystem-capstone/chapter-17-podman-internals.md
+      - Chapter 18: part-06-ecosystem-capstone/chapter-18-kubernetes-container-runtime-architecture.md
+      - Chapter 19: part-06-ecosystem-capstone/chapter-19-build-your-own-linux-container-runtime-in-go.md
+  - Appendices: appendices/index.md
+  - Glossary: glossary.md
+  - References: references.md
+  - Diagram asset conventions: assets/diagrams/README.md
