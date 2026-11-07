@@ -30,17 +30,8 @@ jobs:
           enable-cache: false
       - name: Install pinned Python
         run: uv python install 3.14.10
-      - name: Check or bootstrap uv.lock
-        id: lock
-        shell: bash
-        run: |
-          if [[ -f uv.lock ]]; then
-            uv lock --check
-            echo "bootstrap=false" >> "$GITHUB_OUTPUT"
-          else
-            uv lock
-            echo "bootstrap=true" >> "$GITHUB_OUTPUT"
-          fi
+      - name: Verify committed lock
+        run: uv lock --check
       - name: Sync locked dependencies
         run: uv sync --locked
       - name: Strict documentation build
@@ -48,17 +39,9 @@ jobs:
       - name: Check chapter structure and public-site boundary
         run: uv run --no-sync python scripts/check_docs_structure.py
       - name: Upload non-published build artifact
-        uses: actions/upload-artifact@c2acdedd35a8824a1552c7137f8c18288c3ea469 # v7.0.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: docs-main-build
           path: site/
           if-no-files-found: error
           retention-days: 7
-      - name: Upload initial uv.lock for Owner-controlled commit
-        if: steps.lock.outputs.bootstrap == 'true'
-        uses: actions/upload-artifact@c2acdedd35a8824a1552c7137f8c18288c3ea469 # v7.0.2
-        with:
-          name: uv-lock-bootstrap
-          path: uv.lock
-          if-no-files-found: error
-          retention-days: 1
