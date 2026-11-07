@@ -1,0 +1,38 @@
+name: Lab feedback
+description: Submit sanitized evidence from a separately authorized lab only.
+title: "[Lab feedback] "
+body:
+  - type: markdown
+    attributes:
+      value: "Phase 7 is Not started. DEC-009 and DEC-010 remain Deferred. Do not use this template to request or imply authorization to run labs. Never include private host details or credentials."
+  - type: input
+    id: chapter
+    attributes:
+      label: Chapter / lab identifier
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Sanitized OS, kernel and tool versions
+    validations:
+      required: true
+  - type: textarea
+    id: commands
+    attributes:
+      label: Exact commands and actual output (redacted)
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected vs actual result and cleanup outcome
+    validations:
+      required: true
+  - type: checkboxes
+    id: safe
+    attributes:
+      label: Public disclosure
+      options:
+        - label: I removed credentials, personal data and private host/network identifiers.
+          required: true
