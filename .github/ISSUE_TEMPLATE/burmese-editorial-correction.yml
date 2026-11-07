@@ -1,0 +1,22 @@
+name: Burmese editorial correction
+description: Suggest a wording or terminology improvement without changing technical meaning.
+title: "[Editorial] "
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Chapter and section
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current wording
+    validations:
+      required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed wording and intended meaning
+    validations:
+      required: true
