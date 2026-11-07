@@ -1,0 +1,39 @@
+name: Documentation PR check
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-pr-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-check:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout untrusted PR merge commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up pinned uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.13.7"
+          python-version: "3.14.10"
+          enable-cache: false
+      - name: Install pinned Python
+        run: uv python install 3.14.10
+      - name: Verify committed lock
+        run: uv lock --check
+      - name: Sync exact dependencies
+        run: uv sync --locked
+      - name: Strict documentation build
+        run: uv run --no-sync mkdocs build --strict
+      - name: Check chapter structure and public-site boundary
+        run: uv run --no-sync python scripts/check_docs_structure.py
