@@ -1,0 +1,70 @@
+name: Deploy documentation to GitHub Pages
+
+# Deployment is intentionally manual. Select the main branch when dispatching.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages-deployment
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout approved default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pinned uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.13.7"
+          python-version: "3.14.10"
+          enable-cache: false
+
+      - name: Install pinned Python
+        run: uv python install 3.14.10
+
+      - name: Verify committed lock
+        run: uv lock --check
+
+      - name: Sync locked dependencies
+        run: uv sync --locked
+
+      - name: Strict documentation build
+        run: uv run --no-sync mkdocs build --strict
+
+      - name: Check chapter structure and public-site boundary
+        run: uv run --no-sync python scripts/check_docs_structure.py
+
+      - name: Upload exact Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site/
+          retention-days: 1
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy the artifact from this workflow run
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
