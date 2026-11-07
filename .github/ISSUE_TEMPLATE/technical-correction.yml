@@ -1,0 +1,22 @@
+name: Technical correction
+description: Report a version-specific technical error.
+title: "[Technical] "
+body:
+  - type: input
+    id: chapter
+    attributes:
+      label: Chapter and section
+    validations:
+      required: true
+  - type: textarea
+    id: claim
+    attributes:
+      label: Current claim and proposed correction
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Official/versioned source and affected release
+    validations:
+      required: true
