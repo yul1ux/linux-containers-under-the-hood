@@ -8,7 +8,7 @@ Linux container နည်းပညာ၏ အတွင်းပိုင်းလ
 - Book architecture: Approved — 6 Parts, 19 Chapters.
 - Chapter Production (Phase 6): **Not started**.
 - Lab Validation (Phase 7): **Not started**.
-- Documentation site: Not published. GitHub Pages deployment is not configured or authorized by this setup.
+- Documentation site: **Published** on GitHub Pages — https://yul1ux.github.io/linux-containers-under-the-hood/.
 - Host/VM feasibility and Fedora guest baseline: **Deferred** (DEC-009 and DEC-010).
 
 Chapter files currently contain navigation scaffolding only; they are not chapter drafts.
@@ -26,11 +26,11 @@ Chapter files currently contain navigation scaffolding only; they are not chapte
 
 ## Documentation
 
-MkDocs Material is the approved initial platform. The canonical documentation URL is planned as:
+MkDocs Material is the approved initial platform. The documentation site is published at:
 
 https://yul1ux.github.io/linux-containers-under-the-hood/
 
-This is a planned destination only; no Pages site has been published. Pages deployment requires separate Owner authorization.
+Deployments are manually triggered from the `main` branch using the GitHub Actions `workflow_dispatch` event. The workflow builds and validates the documentation before publishing the exact build artifact to GitHub Pages.
 
 ## Local workflow
 
