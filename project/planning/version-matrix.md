@@ -11,6 +11,6 @@
 | Runner | ubuntu-24.04 | GitHub-hosted |
 | actions/checkout | 3d3c42e5aac5ba805825da76410c181273ba90b1 (v7.0.1) | Full SHA |
 | astral-sh/setup-uv | 07a047e608db84b3d8c06cd9a7c7dcc9c355c18e (v10.3.2) | Full SHA |
-| actions/upload-artifact | cf430e030ddbb5b0abf93d22962f4752f3646cd9 (v7.0.2) | Full SHA |
+| actions/upload-artifact | c2acdedd35a8824a1552c7137f8c18288c3ea469 (v7.0.2) | Full SHA |
 
 Material 9.8.0 requires Python 3.11+; upstream maintenance ends 5 May 2027. DEC-003 retains Material initially; DEC-004 defers Zensical. No browser, mobile, Mermaid, host, VM or lab test is claimed.
