@@ -1,0 +1,16 @@
+name: Documentation defect
+description: Report a broken link, navigation or rendering problem.
+title: "[Docs] "
+body:
+  - type: input
+    id: path
+    attributes:
+      label: Documentation path or URL
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce and expected/actual behavior
+    validations:
+      required: true
