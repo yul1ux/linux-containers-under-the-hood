@@ -1,0 +1,64 @@
+name: Documentation main check
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-main-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-check:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up pinned uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.13.7"
+          python-version: "3.14.10"
+          enable-cache: false
+      - name: Install pinned Python
+        run: uv python install 3.14.10
+      - name: Check or bootstrap uv.lock
+        id: lock
+        shell: bash
+        run: |
+          if [[ -f uv.lock ]]; then
+            uv lock --check
+            echo "bootstrap=false" >> "$GITHUB_OUTPUT"
+          else
+            uv lock
+            echo "bootstrap=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Sync locked dependencies
+        run: uv sync --locked
+      - name: Strict documentation build
+        run: uv run --no-sync mkdocs build --strict
+      - name: Check chapter structure and public-site boundary
+        run: uv run --no-sync python scripts/check_docs_structure.py
+      - name: Upload non-published build artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: docs-main-build
+          path: site/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload initial uv.lock for Owner-controlled commit
+        if: steps.lock.outputs.bootstrap == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: uv-lock-bootstrap
+          path: uv.lock
+          if-no-files-found: error
+          retention-days: 1
