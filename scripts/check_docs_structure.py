@@ -30,11 +30,11 @@ for c in chapters:
     if not lines or lines[0] != f"# Chapter {c['number']:02d} — {c['title']}":
         sys.exit(f"ERROR: heading/index mismatch: {p}")
     is_scaffold = any("Navigation scaffold only" in line for line in lines)
-    if c["number"] == 1:
+    if c["number"] in (1, 2):
         if is_scaffold:
-            sys.exit(f"ERROR: published Chapter 1 is still marked as a scaffold: {p}")
+            sys.exit(f"ERROR: published Chapter {c['number']} is still marked as a scaffold: {p}")
         if not any("Lab status:" in line and "Designed, not tested" in line for line in lines[:12]):
-            sys.exit(f"ERROR: Chapter 1 must disclose that its lab is designed, not tested: {p}")
+            sys.exit(f"ERROR: Chapter {c['number']} must disclose that its lab is designed, not tested: {p}")
     elif not is_scaffold:
         sys.exit(f"ERROR: Chapter {c['number']} must remain a navigation scaffold until separately authorized: {p}")
 if not (site / "index.html").is_file():
@@ -42,6 +42,6 @@ if not (site / "index.html").is_file():
 if (site / "project").exists():
     sys.exit("ERROR: project records leaked into site output")
 print("PASS: approved 6-Part / 19-Chapter structure and navigation")
-print("PASS: Chapter 1 manuscript is present and its untested lab status is explicit")
-print("PASS: Chapters 2–19 remain clearly marked as scaffolds")
+print("PASS: Chapters 1 and 2 manuscripts are present and their untested lab status is explicit")
+print("PASS: Chapters 3–19 remain clearly marked as scaffolds")
 print("PASS: site output exists and project/ is excluded")
