@@ -15,10 +15,10 @@ Technical correction တွင် chapter/section၊ လက်ရှိ claim၊
 မြန်မာ Unicode ကို အဓိကအသုံးပြုပါ။ Command၊ code၊ API၊ file path နှင့် kernel identifier များကို မပြောင်းရ။ Ko Ei Maung ၏ API – လိုတိုရှင်း ကို အထွေထွေ editorial inspiration အဖြစ်သာ သဘောထားပြီး စာသား၊ ထူးခြားသော ဥပမာ သို့မဟုတ် distinctive style ကို မကူးယူရ။
 
 ## Scope and safety
-Approved architecture သည် 6 Parts / 19 Chapters ဖြစ်သည်။ Chapter files များသည် navigation scaffold သာဖြစ်ပြီး Phase 6 Chapter Production မစတင်သေးပါ။ Phase 7 Lab Validation မစတင်သေးပါ။ DEC-009/010 Deferred ဖြစ်သည်။ Host inventory၊ VM provisioning၊ privileged lab သို့မဟုတ် everyday host ပေါ်တွင် privileged experiment များကို ဤ setup ကြောင့် ခွင့်ပြုသည်ဟု မယူဆရ။ Credentials၊ tokens၊ keys၊ usernames၊ hostnames၊ private IPs၊ home paths၊ serial numbers သို့မဟုတ် personal data မတင်ရ။
+Approved architecture သည် 6 Parts / 19 Chapters ဖြစ်သည်။ Chapter 01 အတွက် Phase 6 production ကို စတင်ခွင့်ပြုထားပြီး initial manuscript ကို publish လုပ်ထားသည်။ Chapters 02–19 သည် navigation scaffold များအဖြစ်သာ ရှိနေဆဲဖြစ်ပြီး သီးခြား Owner authorization မရှိဘဲ production မစတင်ရ။ Phase 7 Lab Validation သည် Not started ဖြစ်ပြီး Chapter 01 lab ကိုလည်း Designed, not tested အဖြစ်သာ သတ်မှတ်ထားသည်။ DEC-009/010 Deferred ဖြစ်သည်။ Host inventory၊ VM provisioning၊ privileged lab သို့မဟုတ် everyday host ပေါ်တွင် privileged experiment များကို ဤ approval ကြောင့် ခွင့်ပြုသည်ဟု မယူဆရ။ Credentials၊ tokens၊ keys၊ usernames၊ hostnames၊ private IPs၊ home paths၊ serial numbers သို့မဟုတ် personal data မတင်ရ။
 
 ## Pull Requests
-PR တစ်ခုကို scope တစ်ခုတည်းအပေါ် အာရုံစိုက်ပါ။ Affected section၊ evidence/source၊ validation status နှင့် cleanup status ကို ဖော်ပြပါ။ Strict MkDocs build နှင့် structure check အောင်မြင်ရမည်။ မစမ်းသပ်ထားသည့် lab ကို ရှင်းလင်းစွာဖော်ပြပါ။
+PR တစ်ခုကို scope တစ်ခုတည်းအပေါ် အာရုံစိုက်ပါ။ Affected section၊ evidence/source၊ validation status နှင့် cleanup status ကို ဖော်ပြပါ။ Strict MkDocs build နှင့် structure check အောင်မြင်ရမည်။ Chapter production သည် သီးခြား Owner authorization ရရှိထားသော chapter များအတွက်သာ ဖြစ်ရမည်။ မစမ်းသပ်ထားသည့် lab ကို ရှင်းလင်းစွာဖော်ပြပါ။
 
 ## Licensing
 Book prose/original diagrams: CC BY 4.0။ Original code examples/lab scripts: MIT။ Third-party content သည် မူလ license နှင့် attribution အတိုင်းဖြစ်သည်။

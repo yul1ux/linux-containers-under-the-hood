@@ -6,12 +6,12 @@ Linux container နည်းပညာ၏ အတွင်းပိုင်းလ
 
 - Repository foundation: Initial setup in progress.
 - Book architecture: Approved — 6 Parts, 19 Chapters.
-- Chapter Production (Phase 6): **Not started**.
-- Lab Validation (Phase 7): **Not started**.
-- Documentation site: **Published** on GitHub Pages — https://yul1ux.github.io/linux-containers-under-the-hood/.
+- Chapter Production (Phase 6): **In progress** — Chapter 01 initial manuscript published; Chapters 02–19 remain navigation scaffolds.
+- Lab Validation (Phase 7): **Not started** — Chapter 01 lab is designed, not tested.
+- Documentation site: **Published** on GitHub Pages — https://yul1ux.github.io/linux-containers-under-the-hood/; the Chapter 01 update requires a manual deployment after merge.
 - Host/VM feasibility and Fedora guest baseline: **Deferred** (DEC-009 and DEC-010).
 
-Chapter files currently contain navigation scaffolding only; they are not chapter drafts.
+Chapter 01 contains the initial manuscript. Chapters 02–19 remain navigation scaffolds. No lab validation is claimed.
 
 ## Book structure
 
@@ -30,7 +30,7 @@ MkDocs Material is the approved initial platform. The documentation site is publ
 
 https://yul1ux.github.io/linux-containers-under-the-hood/
 
-Deployments are manually triggered from the `main` branch using the GitHub Actions `workflow_dispatch` event. The workflow builds and validates the documentation before publishing the exact build artifact to GitHub Pages.
+Deployments are manually triggered from the `main` branch using the GitHub Actions `workflow_dispatch` event. A merge to `main` does not update the live site automatically; the deployment workflow must be run manually after the checks pass.
 
 ## Local workflow
 

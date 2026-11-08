@@ -14,5 +14,6 @@
 
 ## Safeguards
 - [ ] 6-Part / 19-Chapter architecture preserved.
-- [ ] Phase 6/7 scope not started by this PR.
+- [ ] Changes are limited to chapter production explicitly authorized by the Project Owner.
+- [ ] Phase 7 lab validation is not claimed unless separately authorized and evidenced.
 - [ ] DEC-009/010 remain Deferred.

@@ -1,8 +1,8 @@
 # Chapter validation matrix
 
-**Design:** Phase 5 planning. **Execution:** Not started. **Phase 7:** Not started.
+**Chapter production:** Chapter 01 initial manuscript published; Chapters 02–19 remain unstarted. **Lab execution:** Not started. **Phase 7:** Not started.
 
-- Chapter 1: Understanding Containers — designed; not executed.
+- Chapter 1: Understanding Containers — manuscript published; lab designed, not executed.
 - Chapter 2: Linux Processes and System Calls — designed; not executed.
 - Chapter 3: Linux Namespaces — designed; not executed.
 - Chapter 4: Control Groups — designed; not executed.
