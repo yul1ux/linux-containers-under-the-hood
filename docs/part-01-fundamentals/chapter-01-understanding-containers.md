@@ -7,6 +7,7 @@
 ## 1. Container ကို ဘာကြောင့် သုံးလာကြသလဲ
 
 Application တစ်ခုကို ကိုယ့်ကွန်ပျူတာမှာ အဆင်ပြေပြေ run လို့ရပေမဲ့ တခြားစက်တစ်လုံးပေါ် ရွှေ့လိုက်တဲ့အခါ အလုပ်မလုပ်တော့တာမျိုး ကြုံဖူးပါသလား။ တစ်ခါတလေ လိုအပ်တဲ့ library မရှိတာ ဖြစ်နိုင်သလို၊ version မတူတာကြောင့်လည်း ဖြစ်နိုင်ပါတယ်။ Application တစ်ခုနဲ့တစ်ခု လိုအပ်တဲ့ software version မတူတဲ့အခါ ဒီပြဿနာက ပိုပြီး မကြာခဏ တွေ့ရတတ်ပါတယ်။
+
 ဥပမာ payment service တစ်ခုက Python 3.12 နဲ့ library version အသစ်တစ်ခုကို လိုအပ်နေပြီး reporting service တစ်ခုကတော့ Python 3.10 နဲ့ library version အဟောင်းကိုပဲ အသုံးပြုနေတယ်ဆိုပါစို့။ Application နှစ်ခုစလုံးကို host တစ်လုံးတည်းမှာ တိုက်ရိုက်တင်ထားရင် system package သို့မဟုတ် shared library တစ်ခုကို update လုပ်ခြင်းက အခြား application ကိုပါ ထိခိုက်စေနိုင်ပါတယ်။ Python virtual environment လိုနည်းလမ်းတွေက Python package တွေကို ခွဲထားပေးနိုင်ပေမဲ့ process visibility၊ filesystem view နဲ့ network stack တို့ကို သီးခြားခွဲပေးတာ မဟုတ်ပါဘူး။
 
 Application တစ်ခုစီအတွက် VM သီးခြားဖန်တီးထားခြင်းက ဒီလို dependency နဲ့ environment conflict တွေကို လျှော့ချနိုင်ပါတယ်။ သို့သော် VM တစ်ခုစီမှာ guest operating system တစ်ခုစီ ရှိနေတဲ့အတွက် update၊ monitoring နဲ့ maintenance ကိုလည်း သီးခြားစီ စီမံရပါတယ်။ Workload များလာတဲ့အခါ ထိုနည်းလမ်းက resource အသုံးပြုမှုနဲ့ လုပ်ငန်းလည်ပတ်ရေးအလုပ်တွေကို တိုးစေနိုင်ပါတယ်။
