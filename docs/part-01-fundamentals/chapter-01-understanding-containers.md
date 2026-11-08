@@ -3,6 +3,7 @@
 > **Chapter status:** Revised manuscript — 8 November 2026  
 > **Research snapshot:** 8 November 2026  
 > **Lab status:** Designed, not tested
+
 ## 1. Container ကို ဘာကြောင့် သုံးလာကြသလဲ
 
 ဥပမာ payment service တစ်ခုက Python 3.12 နဲ့ library version အသစ်တစ်ခုကို လိုအပ်နေပြီး reporting service တစ်ခုကတော့ Python 3.10 နဲ့ library version အဟောင်းကိုပဲ အသုံးပြုနေတယ်ဆိုပါစို့။ Application နှစ်ခုစလုံးကို host တစ်လုံးတည်းမှာ တိုက်ရိုက်တင်ထားရင် system package သို့မဟုတ် shared library တစ်ခုကို update လုပ်ခြင်းက အခြား application ကိုပါ ထိခိုက်စေနိုင်ပါတယ်။ Python virtual environment လိုနည်းလမ်းတွေက Python package တွေကို ခွဲထားပေးနိုင်ပေမဲ့ process visibility၊ filesystem view နဲ့ network stack တို့ကို သီးခြားခွဲပေးတာ မဟုတ်ပါဘူး။
