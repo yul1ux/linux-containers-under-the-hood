@@ -1,548 +1,807 @@
 # Chapter 01 — Understanding Containers
 
-> **Chapter status:** Revised manuscript — 8 November 2026  
-> **Research snapshot:** 8 November 2026  
+> **Chapter status:** Revised manuscript — 9 November 2026  
+> **Research snapshot:** 9 November 2026  
 > **Lab status:** Designed, not tested
 
-## 1. Container ကို ဘာကြောင့် သုံးလာကြသလဲ
 
-Application တစ်ခုကို ကိုယ့်ကွန်ပျူတာမှာ အဆင်ပြေပြေ run လို့ရပေမဲ့ တခြားစက်တစ်လုံးပေါ် ရွှေ့လိုက်တဲ့အခါ အလုပ်မလုပ်တော့တာမျိုး ကြုံဖူးပါသလား။ တစ်ခါတလေ လိုအပ်တဲ့ library မရှိတာ ဖြစ်နိုင်သလို၊ version မတူတာကြောင့်လည်း ဖြစ်နိုင်ပါတယ်။ Application တစ်ခုနဲ့တစ်ခု လိုအပ်တဲ့ software version မတူတဲ့အခါ ဒီပြဿနာက ပိုပြီး မကြာခဏ တွေ့ရတတ်ပါတယ်။
+**Linux Containers Under the Hood**  
+*Part I — Container Fundamentals*
 
-ဥပမာ payment service တစ်ခုက Python 3.12 နဲ့ library version အသစ်တစ်ခုကို လိုအပ်နေပြီး reporting service တစ်ခုကတော့ Python 3.10 နဲ့ library version အဟောင်းကိုပဲ အသုံးပြုနေတယ်ဆိုပါစို့။ Application နှစ်ခုစလုံးကို host တစ်လုံးတည်းမှာ တိုက်ရိုက်တင်ထားရင် system package သို့မဟုတ် shared library တစ်ခုကို update လုပ်ခြင်းက အခြား application ကိုပါ ထိခိုက်စေနိုင်ပါတယ်။ Python virtual environment လိုနည်းလမ်းတွေက Python package တွေကို ခွဲထားပေးနိုင်ပေမဲ့ process visibility၊ filesystem view နဲ့ network stack တို့ကို သီးခြားခွဲပေးတာ မဟုတ်ပါဘူး။
 
-Application တစ်ခုစီအတွက် VM သီးခြားဖန်တီးထားခြင်းက ဒီလို dependency နဲ့ environment conflict တွေကို လျှော့ချနိုင်ပါတယ်။ သို့သော် VM တစ်ခုစီမှာ guest operating system တစ်ခုစီ ရှိနေတဲ့အတွက် update၊ monitoring နဲ့ maintenance ကိုလည်း သီးခြားစီ စီမံရပါတယ်။ Workload များလာတဲ့အခါ ထိုနည်းလမ်းက resource အသုံးပြုမှုနဲ့ လုပ်ငန်းလည်ပတ်ရေးအလုပ်တွေကို တိုးစေနိုင်ပါတယ်။
+## 1. Container ကို ဘာကြောင့် အသုံးပြုလာကြသလဲ။
 
-Container က အခြားနည်းလမ်းတစ်ခုကို ပေးပါတယ်။ Application အတွက် လိုအပ်တဲ့ user-space files၊ libraries နဲ့ default configuration တွေကို image အဖြစ် စုစည်းထားနိုင်ပါတယ်။ ထို image ကို host တစ်လုံးတည်းပေါ်မှာ အခြား application တွေနဲ့အတူ run လုပ်နိုင်သလို process တစ်ခုစီ မြင်ရမယ့် resource၊ အသုံးပြုနိုင်မယ့် resource နဲ့ ရရှိမယ့် privilege တွေကိုလည်း kernel facilities တွေနဲ့ ခွဲခြားသတ်မှတ်နိုင်ပါတယ်။
+Application တစ်ခုကို ကိုယ့်ကွန်ပျူတာမှာ အဆင်ပြေပြေ အသုံးပြုနိုင်ပေမဲ့ တခြားကွန်ပျူတာတစ်လုံးပေါ်ကို ရွှေ့လိုက်တဲ့အခါ အလုပ်မလုပ်တော့တာမျိုး ကြုံဖူးပါသလား။
 
-Image တစ်ခုရှိရုံနဲ့ deployment ပြဿနာအားလုံး ပြေလည်သွားတာတော့ မဟုတ်ပါဘူး။ Host kernel၊ CPU architecture၊ mounted data၊ secrets၊ network policy နဲ့ external service တွေကို သီးခြားစီ စီမံရပါသေးပါတယ်။ Container က application environment တွေကြား ကွာခြားမှုကို လျှော့ချပေးတဲ့ နည်းလမ်းတစ်ခုဖြစ်ပြီး deployment အတွက် လိုအပ်တဲ့ အရာအားလုံးကို အစားထိုးပေးတာ မဟုတ်ပါဘူး။
+ဒီလိုပြဿနာမျိုးဟာ Software Development နဲ့ Server Administration လုပ်ငန်းတွေမှာ မကြာခဏ ကြုံတွေ့ရတတ်ပါတယ်။ တစ်ခါတလေ Application အတွက် လိုအပ်တဲ့ Library မရှိတာကြောင့် ဖြစ်နိုင်သလို၊ တစ်ခါတလေ Software Version မတူတာကြောင့်လည်း ဖြစ်နိုင်ပါတယ်။
 
-ဒီအခန်းမှာ container ဆိုတာ ဘာလဲ၊ Virtual Machine (VM) နဲ့ ဘယ်လိုကွာသလဲ၊ Linux kernel ရဲ့ ဘယ် mechanism တွေက container environment တစ်ခုကို ဖြစ်လာစေသလဲဆိုတာကို လေ့လာပါမယ်။ Namespace API၊ cgroup controller၊ mount setup နဲ့ networking configuration တို့ရဲ့ အသေးစိတ်ကိုတော့ သက်ဆိုင်ရာနောက်ပိုင်း chapter တွေမှာ ဆက်ကြည့်ပါမယ်။
+ဥပမာ Payment Service တစ်ခုဟာ Python Version 3.12 ကို အသုံးပြုဖို့ လိုအပ်နေပြီး Reporting Service တစ်ခုကတော့ Python Version 3.10 ကိုပဲ အသုံးပြုနိုင်တယ်ဆိုပါစို့။ ဒီ Application နှစ်ခုကို Server တစ်လုံးတည်းမှာ တိုက်ရိုက်ထည့်သွင်းအသုံးပြုတဲ့အခါ Software Version တွေ မတူညီတာကြောင့် ပြဿနာဖြစ်လာနိုင်ပါတယ်။
 
-## 2. ဒီအခန်းပြီးရင် ဘာတွေ ခွဲခြားသိနိုင်မလဲ
+အထူးသဖြင့် Application တစ်ခုအတွက် Library တစ်ခုကို Update လုပ်လိုက်တဲ့အခါ အခြား Application တစ်ခုကလည်း အဲဒီ Library ကို အသုံးပြုနေရင် အလုပ်မလုပ်တော့တာမျိုး ဖြစ်နိုင်ပါတယ်။
 
-ဒီအခန်းကို ဖတ်ပြီးရင် အောက်ပါအချက်တွေကို ကိုယ့်စကားနဲ့ ရှင်းပြနိုင်လာဖို့ ရည်ရွယ်ထားပါတယ်။
+ဒီလိုပြဿနာတွေကို ဖြေရှင်းဖို့ Python Virtual Environment လို နည်းလမ်းတွေကို အသုံးပြုနိုင်ပါတယ်။ Python Virtual Environment က Python Package တွေကို Project တစ်ခုစီအလိုက် သီးခြားခွဲထားပေးနိုင်ပါတယ်။ ဒါပေမဲ့ Process တွေမြင်ရပုံ၊ Filesystem နဲ့ Network ပတ်ဝန်းကျင်တွေကိုတော့ အပြည့်အဝ ခွဲခြားပေးတာ မဟုတ်ပါဘူး။
 
-- Linux OS-level container ကို isolated process environment အဖြစ် ရှင်းပြနိုင်မယ်။
-- Container နဲ့ VM တို့ ဘယ် kernel boundary ကို အသုံးပြုသလဲဆိုတာ နှိုင်းယှဉ်နိုင်မယ်။
-- Container က dependency နဲ့ deployment ပြဿနာတွေကို ဘယ်လိုလျှော့ချပေးသလဲ၊ ဘယ်အချက်တွေကို သီးခြားစီမံရသေးသလဲဆိုတာ ဥပမာပေးနိုင်မယ်။
-- `chroot()` က ဘာလုပ်ပေးသလဲ၊ တစ်ခုတည်းနဲ့ security sandbox ဘာကြောင့် မဖြစ်နိုင်သလဲဆိုတာ ရှင်းပြနိုင်မယ်။
-- FreeBSD Jails၊ Solaris Zones၊ LXC၊ Docker နဲ့ OCI တို့ရဲ့ သမိုင်းဆိုင်ရာ အခန်းကဏ္ဍကို ခွဲခြားသိနိုင်မယ်။
-- Namespace၊ cgroup၊ capability နဲ့ filesystem isolation တို့ရဲ့ အခြေခံတာဝန်ကို ခွဲပြနိုင်မယ်။
-- Image၊ container၊ runtime နဲ့ engine တို့ရဲ့ အဓိပ္ပာယ်နဲ့ တာဝန်ကို မရောထွေးဘဲ ရှင်းပြနိုင်မယ်။
-- OCI runtime ရဲ့ `create` နဲ့ `start` operation တို့ ဘာကြောင့် သီးခြားဖြစ်နေသလဲဆိုတာ နားလည်မယ်။
+နောက်ထပ်နည်းလမ်းတစ်ခုက Application တစ်ခုစီအတွက် Virtual Machine (VM) သီးခြားတည်ဆောက်ပေးခြင်းဖြစ်ပါတယ်။ VM တစ်ခုစီမှာ Operating System သီးခြားတစ်ခုစီ အသုံးပြုနိုင်တဲ့အတွက် Application တွေကြားက ပြဿနာတွေကို လျှော့ချနိုင်ပါတယ်။
 
-ဒီအခန်းရဲ့ Lab ကတော့ လက်ရှိ environment ထဲက process နဲ့ namespace view အချို့ကို စစ်ကြည့်ဖို့ပဲ ရည်ရွယ်ပါတယ်။ Namespace, cgroup, capability, seccomp နဲ့ LSM အားလုံးကို တစ်ခါတည်း စမ်းသပ်အတည်ပြုတဲ့ Lab မဟုတ်ပါဘူး။
+သို့သော် VM အများအပြား အသုံးပြုလာတဲ့အခါ Operating System တစ်ခုစီကို Update လုပ်ရတယ်၊ Monitoring လုပ်ရတယ်၊ Maintenance လုပ်ရတယ်။ ဒီလုပ်ငန်းတွေဟာ Server အရေအတွက်နဲ့ Application အရေအတွက်များလာတာနဲ့အမျှ ပိုမိုရှုပ်ထွေးလာနိုင်ပါတယ်။
 
-## 3. ဖတ်ရှုရန် ကြိုတင်လိုအပ်ချက်
+ဒီနေရာမှာ Container နည်းပညာက အခြားရွေးချယ်စရာတစ်ခုအဖြစ် ပေါ်လာပါတယ်။
 
-ဒီအခန်းကို ဖတ်ရှုဖို့ Linux terminal အသုံးပြုဖူးခြင်း၊ filesystem path နဲ့ process ဆိုတဲ့ အခြေခံအယူအဆတွေကို သိထားခြင်းလောက်နဲ့ လုံလောက်ပါတယ်။ Docker၊ Podman၊ Kubernetes သို့မဟုတ် OCI specification ကို ကြိုတင်လေ့လာထားဖို့ မလိုပါဘူး။
+Container ကို အသုံးပြုတဲ့အခါ Application တစ်ခုအတွက် လိုအပ်တဲ့ Software၊ Library နဲ့ သတ်မှတ်ထားတဲ့ Configuration တွေကို တစ်စုတစ်စည်းတည်း ထည့်သွင်းထားနိုင်ပါတယ်။ အဲဒီအထုပ်ကို Container Image လို့ ခေါ်ပါတယ်။
 
-Chapter 1 ရဲ့ ရည်ရွယ်ချက်က နောက်ပိုင်း chapter တွေကို ကြိုတင်အသေးစိတ် သင်ပေးဖို့ မဟုတ်ပါဘူး။ Namespace နဲ့ cgroup တို့ရဲ့ အခြေခံအဓိပ္ပာယ်ကို မိတ်ဆက်ပေးမှာဖြစ်ပေမဲ့ `clone()`၊ `unshare()`၊ `setns()` တို့ရဲ့ API အသေးစိတ်၊ CPU/memory controller တွေ ပြင်ဆင်ပုံ၊ capability set တစ်ခုချင်းစီနဲ့ mount propagation တို့ကို ဒီအခန်းမှာ မချဲ့ထွင်ပါဘူး။ အဲဒီအကြောင်းအရာတွေကို Chapter 3 မှ Chapter 6 အထိ သီးခြားလေ့လာပါမယ်။
+ဒီ Image ကို အသုံးပြုပြီး Server တစ်လုံးတည်းမှာ Application အမျိုးမျိုးကို သီးခြားပတ်ဝန်းကျင်တွေနဲ့ အလုပ်လုပ်စေနိုင်ပါတယ်။
 
-OverlayFS နဲ့ image storage ကို Chapter 7၊ container networking ကို Chapter 8 မှာ ဆက်လက်လေ့လာပါမယ်။ လက်ရှိအခန်းမှာတော့ အဲဒီ mechanism တွေရဲ့ အမည်နဲ့ အခြေခံတာဝန်ကို သိထားရုံနဲ့ လုံလောက်ပါတယ်။
+ဒါပေမဲ့ Container အသုံးပြုလိုက်တာနဲ့ Deployment ပြဿနာအားလုံး ပြေလည်သွားတာတော့ မဟုတ်ပါဘူး။ Host ရဲ့ Linux Kernel၊ CPU Architecture၊ အသုံးပြုမယ့် Data၊ Password နဲ့ Secret များ၊ Network Policy နဲ့ အခြားပြင်ပ Service တွေကိုလည်း သီးခြားစီ စီမံဖို့ လိုအပ်ပါတယ်။
 
-## 4. Container ဆိုတာ ဘာလဲ
+ဥပမာ Application တစ်ခုကို Container Image ထဲမှာ ထည့်ထားပေမဲ့ Database Password ကို Image ထဲမှာ အမြဲတမ်းထည့်ထားဖို့ မသင့်တော်ပါဘူး။ လုံခြုံရေးအရ သီးခြားစီမံထားဖို့ လိုပါတယ်။
 
-ဒီစာအုပ်မှာ **Linux OS-level container** လို့ ပြောတဲ့အခါ Linux kernel ရဲ့ isolation နဲ့ resource-management facilities တွေကို ပေါင်းစပ်အသုံးပြုပြီး process တစ်ခု သို့မဟုတ် ဆက်စပ်နေတဲ့ process tree တစ်ခုအတွက် သီးခြား execution context ပြင်ဆင်ပေးထားတဲ့ ပုံစံကို ဆိုလိုပါတယ်။
+ဒါကြောင့် Container ကို Deployment ပြဿနာအားလုံးကို ဖြေရှင်းပေးတဲ့ နည်းပညာလို့ မယူဆသင့်ဘဲ Application တွေရဲ့ ပတ်ဝန်းကျင်မတူညီမှုကို လျှော့ချပေးပြီး စီမံခန့်ခွဲရလွယ်ကူစေတဲ့ နည်းပညာတစ်ခုလို့ နားလည်ထားသင့်ပါတယ်။
 
-Kernel အမြင်အရ container အတွင်းက application ဟာ process ပဲ ဖြစ်ပါတယ်။ ၎င်းဟာ shell ကနေ စတင်ထားတဲ့ application ဖြစ်နိုင်သလို web server၊ worker process ဒါမှမဟုတ် parent process က ဖန်တီးထားတဲ့ child process အများအပြားလည်း ဖြစ်နိုင်ပါတယ်။ Container ဆိုတာ အဲဒီ process တွေအတွက် မြင်ရမယ့် resource တွေ၊ အသုံးပြုမယ့် filesystem tree နဲ့ ရရှိမယ့် privilege တွေကို စီစဉ်ပေးထားတဲ့ environment ဖြစ်ပါတယ်။
+ဒီအခန်းမှာ Container ဆိုတာ ဘာလဲ၊ Virtual Machine နဲ့ ဘယ်လိုကွာသလဲ၊ Linux Kernel က Container တွေကို ဘယ်လိုခွဲခြားထိန်းချုပ်ပေးသလဲဆိုတာကို တစ်ဆင့်ချင်း လေ့လာသွားပါမယ်။
 
-ဒီနေရာမှာ မှတ်ထားရမယ့်အချက်တစ်ခု ရှိပါတယ်။ Linux kernel ထဲမှာ `container` လို့ခေါ်တဲ့ object တစ်ခုကို system call တစ်ခုတည်းနဲ့ ဖန်တီးလိုက်တာ မဟုတ်ပါဘူး။ Container တစ်ခုဟာ namespace၊ cgroup၊ filesystem/mount setup၊ privilege နဲ့ security policy စတဲ့ mechanism များကို runtime က လိုအပ်သလို စီစဉ်ပေးထားတဲ့ process environment ဖြစ်ပါတယ်။
+## 2. ဒီအခန်းကို လေ့လာပြီးရင် ဘာတွေသိလာမလဲ။
 
-ပုံမှန် Linux OS-level container တစ်ခုမှာ container process တွေဟာ host Linux kernel ကိုပဲ အသုံးပြုကြပါတယ်။ Container တစ်ခုစီအတွက် guest kernel အသစ်တစ်ခု boot လုပ်ထားတာ မဟုတ်ပါဘူး။ Host process တွေနဲ့ container process တွေကို kernel တစ်ခုတည်းက စီမံပေးနေပြီး process တစ်ခုချင်းစီအတွက် မြင်ရမယ့် resource view နဲ့ access control ကို သတ်မှတ်ပေးထားပါတယ်။
+ဒီအခန်းကို ဖတ်ပြီးတဲ့အခါ Container ကို Docker Command တွေ အသုံးပြုပြီး Run လုပ်နိုင်ရုံတင်မဟုတ်ဘဲ အဲဒီနောက်ကွယ်မှာ ဘယ်လိုအလုပ်လုပ်နေသလဲဆိုတာကိုပါ နားလည်လာဖို့ ရည်ရွယ်ထားပါတယ်။
 
-Container ဖြစ်နေတာတစ်ခုတည်းနဲ့ လုံခြုံရေးအာမခံချက် ရရှိသွားတာ မဟုတ်ပါဘူး။ Runtime က namespaces၊ cgroups၊ filesystem mounts၊ capabilities နဲ့ လိုအပ်တဲ့ security policy တွေကို ဘယ်လိုပေါင်းစပ်ထားသလဲဆိုတာအပေါ် မူတည်ပါတယ်။ Configuration အားနည်းနေတဲ့ container တစ်ခုမှာ host ကို ထိခိုက်စေနိုင်တဲ့ privilege ဒါမှမဟုတ် access တွေ ရှိနေနိုင်ပါတယ်။ [^1][^2]
+ပထမဆုံးအနေနဲ့ Container နဲ့ Virtual Machine တို့ရဲ့ အလုပ်လုပ်ပုံနဲ့ ကွာခြားချက်ကို ရှင်းပြနိုင်လာပါလိမ့်မယ်။ Container တစ်ခုမှာ ကိုယ်ပိုင် Kernel ရှိသလား၊ Host ရဲ့ Kernel ကိုပဲ အသုံးပြုသလားဆိုတာကိုလည်း ခွဲခြားသိရှိလာပါမယ်။
 
-### 4.1 Container က ဘာတွေကို ခွဲခြားပေးနိုင်သလဲ
+ထို့အပြင် `chroot`၊ FreeBSD Jails၊ Solaris Zones၊ LXC နဲ့ Docker တို့ရဲ့ သမိုင်းကြောင်းကို လေ့လာပြီး Container နည်းပညာ ဘယ်လိုတိုးတက်လာခဲ့သလဲဆိုတာ သိလာပါမယ်။
 
-Web application နှစ်ခုကို Linux host တစ်လုံးတည်းပေါ်မှာ run ထားတယ်လို့ ယူဆကြည့်ပါ။ Application တစ်ခုစီကို PID namespace သီးခြားပေးထားရင် အဲဒီ application အတွင်းက process တွေဟာ ကိုယ့် namespace အတွင်းရှိ PID တွေကိုသာ မြင်ရနိုင်ပါတယ်။ Hostname နဲ့ network interface တွေကိုလည်း သီးခြားမြင်ကွင်းအဖြစ် စီစဉ်နိုင်ပါတယ်။ Filesystem ပိုင်းမှာတော့ application တစ်ခုစီအတွက် root filesystem မတူအောင် ပြင်ဆင်နိုင်ပါတယ်။
+နောက်ပိုင်းမှာ Namespace၊ cgroups၊ Capabilities နဲ့ Filesystem Isolation တို့ဟာ Container တစ်ခုကို ဘယ်လိုသီးခြားပတ်ဝန်းကျင်တစ်ခုအဖြစ် ဖန်တီးပေးသလဲဆိုတာကို နားလည်လာပါမယ်။
 
-Resource ပိုင်းမှာ cgroup ကို အသုံးပြုပြီး application တစ်ခုရဲ့ CPU နဲ့ memory အသုံးပြုမှုကို စောင့်ကြည့်ခြင်း၊ ကန့်သတ်ခြင်းတို့ ပြုလုပ်နိုင်ပါတယ်။ Privilege ပိုင်းမှာလည်း application တစ်ခုအတွက် လိုအပ်တဲ့ capability တွေကိုသာ ပေးပြီး မလိုအပ်တဲ့ administrative permission တွေကို ဖယ်ထားနိုင်ပါတယ်။
+နောက်ဆုံးမှာ Container Image၊ Container၊ Runtime နဲ့ Engine တို့ရဲ့ အဓိပ္ပာယ်ကို ခွဲခြားသိရှိလာပြီး Docker Command တစ်ခု Run လုပ်တဲ့အခါ နောက်ကွယ်မှာ ဘယ်လိုအစိတ်အပိုင်းတွေ ပူးပေါင်းအလုပ်လုပ်နေသလဲဆိုတာကို လေ့လာသွားပါမယ်။
 
-ဒါပေမဲ့ container တိုင်းမှာ အဲဒီ control အားလုံးကို မဖြစ်မနေ သီးခြားထားရမယ်လို့ မဆိုလိုပါဘူး။ ဥပမာ container တစ်ခုက host networking ကို အသုံးပြုနိုင်သလို အခြား container တစ်ခုနဲ့ PID namespace ကို မျှဝေထားနိုင်ပါတယ်။ Resource limit လုံးဝမသတ်မှတ်ထားတဲ့ container လည်း ရှိနိုင်ပါတယ်။ ဒါကြောင့် container တစ်ခုကို စစ်ဆေးတဲ့အခါ “container ဖြစ်တယ်” ဆိုတဲ့ အမည်ကိုပဲ မကြည့်ဘဲ အမှန်တကယ်အသုံးပြုထားတဲ့ configuration ကို စစ်ဆေးရပါတယ်။
+ဒီအခန်းရဲ့ ရည်ရွယ်ချက်ဟာ အကြောင်းအရာအားလုံးကို အသေးစိတ်နားလည်ပြီးသား ဖြစ်သွားဖို့ မဟုတ်ပါဘူး။ နောက်ပိုင်း Chapter တွေမှာ ပိုမိုနက်ရှိုင်းစွာ လေ့လာရမယ့် အကြောင်းအရာတွေအတွက် အခြေခံအယူအဆတွေကို ရရှိစေဖို့ ဖြစ်ပါတယ်။
+
+## 3. မဖတ်ခင် ကြိုတင်သိထားဖို့ လိုအပ်တာ
+
+ဒီအခန်းကို စတင်လေ့လာဖို့ Docker၊ Kubernetes ဒါမှမဟုတ် Container နည်းပညာတွေကို ကြိုတင်ကျွမ်းကျင်ထားဖို့ မလိုအပ်ပါဘူး။
+
+Linux Terminal ကို အနည်းငယ်အသုံးပြုဖူးပြီး File နဲ့ Folder တွေကို ဘယ်လိုကြည့်ရသလဲဆိုတာ သိထားရင် စတင်နိုင်ပါတယ်။ ဒါ့အပြင် Program တစ်ခု အလုပ်လုပ်နေတဲ့ အခြေအနေကို Process လို့ ခေါ်တယ်ဆိုတာလောက် နားလည်ထားရင် လုံလောက်ပါတယ်။
+
+ဒီအခန်းမှာ Namespace နဲ့ cgroups တို့ရဲ့ အခြေခံအကြောင်းကို မိတ်ဆက်ပေးမှာဖြစ်ပေမဲ့ အဲဒီနည်းပညာတွေရဲ့ အတွင်းပိုင်းလုပ်ဆောင်ပုံကို အသေးစိတ် မလေ့လာသေးပါဘူး။
+
+ဥပမာ `clone()`၊ `unshare()` နဲ့ `setns()` လို Linux System Call တွေ၊ CPU နဲ့ Memory ထိန်းချုပ်ပုံ၊ Capabilities တစ်ခုချင်းစီရဲ့ အဓိပ္ပာယ်နဲ့ Filesystem Mount လုပ်ပုံတွေကို နောက်ပိုင်း Chapter တွေမှာ သီးခြားလေ့လာပါမယ်။
+
+အလားတူ Container Image တွေကို Disk ထဲမှာ ဘယ်လိုသိမ်းထားသလဲဆိုတဲ့ OverlayFS အကြောင်းကို Chapter 07 မှာ ဆက်လက်လေ့လာမှာဖြစ်ပြီး Container Network ဘယ်လိုချိတ်ဆက်သလဲဆိုတာကို Chapter 08 မှာ လေ့လာသွားပါမယ်။
+
+ဒါကြောင့် လက်ရှိအခန်းမှာ အကြောင်းအရာအားလုံးကို အသေးစိတ် နားလည်ဖို့ထက် အခြေခံသဘောတရားတွေကို အရင်နားလည်ထားဖို့ အရေးကြီးပါတယ်။
+
+## 4. Container ဆိုတာ ဘာလဲ။
+
+Container ဆိုတာကို အလွယ်တကူ နားလည်ဖို့ အရင်ဆုံး Application တစ်ခု အလုပ်လုပ်နေတဲ့ ပတ်ဝန်းကျင်ကို စဉ်းစားကြည့်ရအောင်။
+
+Linux Server တစ်လုံးမှာ Web Server နှစ်ခု Run နေတယ်ဆိုပါစို့။ Web Server တစ်ခုစီဟာ Process တစ်ခု သို့မဟုတ် ဆက်စပ်နေတဲ့ Process အများအပြားနဲ့ အလုပ်လုပ်နိုင်ပါတယ်။
+
+ပုံမှန်အခြေအနေမှာ Linux က အဲဒီ Process တွေကို စီမံပေးပါတယ်။ ဒါပေမဲ့ Application တစ်ခုစီကို တခြား Application တွေနဲ့ မရောထွေးစေချင်ဘူးဆိုရင် Process တွေအတွက် သီးခြားအလုပ်လုပ်နိုင်မယ့် ပတ်ဝန်းကျင်တစ်ခု ပြင်ဆင်ပေးဖို့ လိုလာပါတယ်။
+
+ဒီလိုပတ်ဝန်းကျင်တစ်ခု ဖန်တီးရာမှာ Linux Kernel ရဲ့ ခွဲခြားထိန်းချုပ်နိုင်တဲ့ စွမ်းရည်တွေကို အသုံးပြုပါတယ်။
+
+Linux Kernel အမြင်ကနေကြည့်မယ်ဆိုရင် Container ထဲမှာ အလုပ်လုပ်နေတဲ့ Application ဟာ အခြား Linux Application တွေလိုပဲ Process ဖြစ်ပါတယ်။ Web Server ဖြစ်နိုင်သလို Background Worker သို့မဟုတ် အခြား Program တစ်ခုလည်း ဖြစ်နိုင်ပါတယ်။
+
+ဒါကြောင့် Container ဟာ Linux Kernel ထဲမှာ `container` ဆိုတဲ့ Object တစ်ခုကို Command တစ်ခုတည်းနဲ့ ဖန်တီးလိုက်တာမျိုး မဟုတ်ပါဘူး။
+
+Container တစ်ခု ဖြစ်လာဖို့ Linux Kernel ရဲ့ နည်းပညာအမျိုးမျိုးကို ပေါင်းစပ်အသုံးပြုရပါတယ်။ အဲဒီအလုပ်တွေကို Container Runtime က စီစဉ်ပေးပါတယ်။ Application အတွက် ဘယ် Process တွေကို မြင်ရမလဲ၊ ဘယ် File တွေကို အသုံးပြုနိုင်မလဲ၊ CPU နဲ့ Memory ကို ဘယ်လောက်အထိ အသုံးပြုနိုင်မလဲ၊ ဘယ်လို Permission တွေ ရရှိမလဲဆိုတာကို သတ်မှတ်ပေးထားပါတယ်။
+
+ပုံမှန် Linux Container တစ်ခုရဲ့ အရေးကြီးဆုံးအချက်ကတော့ Host ရဲ့ Linux Kernel ကို အတူမျှဝေသုံးခြင်း ဖြစ်ပါတယ်။
+
+Container တစ်ခုစီမှာ Guest Kernel အသစ်တစ်ခုစီ Boot လုပ်ထားတာ မဟုတ်ပါဘူး။ Host Process တွေနဲ့ Container Process တွေကို Linux Kernel တစ်ခုတည်းကပဲ စီမံခန့်ခွဲပေးပါတယ်။
+
+ဒါပေမဲ့ Container ဖြစ်နေရုံနဲ့ လုံခြုံရေးအပြည့်အဝ ရရှိသွားတာ မဟုတ်ပါဘူး။ Runtime က Permission၊ Filesystem၊ Network နဲ့ Security Setting တွေကို ဘယ်လိုပြင်ဆင်ထားသလဲဆိုတာပေါ်မှာလည်း မူတည်ပါတယ်။
+
+ဥပမာ Container တစ်ခုကို အလွန်ကျယ်ပြန့်တဲ့ Administrator Permission ပေးထားမယ်ဆိုရင် Host System အတွက်တောင် အန္တရာယ်ရှိလာနိုင်ပါတယ်။
+
+ဒါကြောင့် Container ဆိုတာ Application တွေကို သီးခြားခွဲပြီး Run လုပ်နိုင်စေတဲ့ နည်းပညာဖြစ်ပေမဲ့ လုံခြုံရေးကိုလည်း မှန်ကန်စွာ စီမံခန့်ခွဲဖို့ လိုအပ်ပါတယ်။
+
+### 4.1 Container က ဘာတွေကို သီးခြားခွဲပေးနိုင်သလဲ။
+
+Container နှစ်ခုကို Linux Server တစ်လုံးတည်းပေါ်မှာ Run လုပ်ထားတယ်လို့ စိတ်ကူးကြည့်ပါ။
+
+ဒီ Container နှစ်ခုဟာ Host System တစ်ခုတည်းကို အသုံးပြုနေကြပေမဲ့ Application တစ်ခုစီအတွက် မြင်ရတဲ့ပတ်ဝန်းကျင်ကို သီးခြားစီ ပြင်ဆင်ပေးနိုင်ပါတယ်။
+
+ဥပမာ Container A ထဲမှာ အလုပ်လုပ်နေတဲ့ Application က ကိုယ့် Container အတွင်းရှိ Process တွေကိုသာ မြင်ရပြီး Host ရဲ့ Process အားလုံးကို မမြင်ရအောင် ပြုလုပ်နိုင်ပါတယ်။ Container B မှာလည်း အလားတူ သီးခြား Process ပတ်ဝန်းကျင် ရှိနိုင်ပါတယ်။
+
+ဒီလို Process တွေ မြင်ရပုံကို ခွဲခြားပေးတာ PID Namespace ဖြစ်ပါတယ်။
+
+တစ်ဖက်မှာ Hostname ကိုလည်း Container တစ်ခုစီအတွက် သီးခြားသတ်မှတ်နိုင်ပါတယ်။ ဥပမာ Container A ရဲ့ Hostname ကို `web-server` လို့ထားပြီး Container B ရဲ့ Hostname ကို `database-server` လို့ သတ်မှတ်ထားနိုင်ပါတယ်။
+
+Network ပိုင်းမှာလည်း Container တစ်ခုစီအတွက် Network Interface၊ IP Address နဲ့ Routing Table တွေကို သီးခြားမြင်တွေ့စေနိုင်ပါတယ်။
+
+Filesystem ပိုင်းမှာတော့ Container တစ်ခုစီကို ကိုယ်ပိုင် Root Filesystem ရှိသလို မြင်တွေ့စေနိုင်ပါတယ်။ ပုံမှန်အားဖြင့် Container တစ်ခုရဲ့ Root Filesystem ကို အခြား Container က တိုက်ရိုက်မမြင်ရပါဘူး။ ဒါပေမဲ့ Host Directory တစ်ခုကို Bind Mount လုပ်ပြီး မျှဝေထားရင် အဲဒီ Directory နဲ့ သက်ဆိုင်တဲ့ File တွေကို Container အတွင်းကနေ မြင်နိုင်၊ အသုံးပြုနိုင်ပါတယ်။
+
+ဒီလိုမြင်ကွင်းကို ခွဲခြားပေးတဲ့အလုပ်မှာ Mount Namespace နဲ့ Filesystem Mount Setting တွေက အရေးပါပါတယ်။ [9]
+
+Resource အသုံးပြုမှုကိုလည်း ထိန်းချုပ်နိုင်ပါတယ်။ ဥပမာ Container A ကို CPU နဲ့ Memory အသုံးပြုမှုအတွက် သတ်မှတ်ချက်တစ်ခု ပေးထားပြီး Container B ကိုတော့ အခြားသတ်မှတ်ချက်တစ်ခု ပေးထားနိုင်ပါတယ်။ ဒီအလုပ်အတွက် cgroups ကို အသုံးပြုပါတယ်။
+
+ထို့အပြင် Container တစ်ခုကို လိုအပ်တဲ့ ခွင့်ပြုချက်တွေပဲ ပေးထားနိုင်ပါတယ်။ မလိုအပ်တဲ့ Administrator Permission တွေကို ဖယ်ထားနိုင်ပါတယ်။
+
+ဒါပေမဲ့ Container တိုင်းမှာ ဒီအရာအားလုံးကို မဖြစ်မနေ သီးခြားခွဲထားရမယ်လို့ မဆိုလိုပါဘူး။
+
+ဥပမာ Container တစ်ခုဟာ Host ရဲ့ Network ကိုပဲ တိုက်ရိုက်အသုံးပြုထားနိုင်ပါတယ်။ နောက်ထပ် Container တစ်ခုကလည်း အခြား Container နဲ့ PID ပတ်ဝန်းကျင်ကို မျှဝေထားနိုင်ပါတယ်။ Resource Limit မသတ်မှတ်ထားတဲ့ Container လည်း ရှိနိုင်ပါတယ်။
+
+ဒီအချက်ကြောင့် Container တစ်ခုကို စစ်ဆေးတဲ့အခါ Container ဖြစ်တယ်ဆိုတဲ့ အမည်ကိုသာ ကြည့်ပြီး ဆုံးဖြတ်လို့ မရပါဘူး။ အဲဒီ Container မှာ တကယ်အသုံးပြုထားတဲ့ Configuration ကိုပါ စစ်ဆေးဖို့ လိုအပ်ပါတယ်။
 
 ### 4.2 Container ကို အသုံးပြုရတဲ့ အကြောင်းရင်း
 
-Container ရဲ့ အကျိုးကျေးဇူးကို “ပိုမြန်တယ်”၊ “ပိုပေါ့တယ်” ဆိုတဲ့ စကားလုံးတွေနဲ့သာ ရှင်းပြလို့ မရပါဘူး။ Application တစ်ခုကို ပြင်ဆင်၊ ပို့ဆောင်၊ run လုပ်တဲ့အခါ ကြုံရတဲ့ ပြဿနာတွေကို ဘယ်လောက်လျှော့ချပေးနိုင်သလဲဆိုတာက ပိုအရေးကြီးပါတယ်။
+Container ကို အသုံးပြုရတဲ့ အကြောင်းရင်းကို ပိုမြန်တယ်၊ ပိုပေါ့တယ်ဆိုတဲ့ အချက်နှစ်ခုနဲ့ပဲ ရှင်းပြလို့ မရပါဘူး။
 
-**Dependency ကို တစ်စုတစ်စည်းတည်း ထိန်းထားနိုင်ခြင်း။** Application အတွက် လိုအပ်တဲ့ runtime နဲ့ library version တွေကို image ထဲမှာ ထည့်ထားနိုင်လို့ development စက်နဲ့ deployment server ကြား ကွာခြားချက်ကို လျှော့ချနိုင်ပါတယ်။ သို့သော် host kernel၊ CPU architecture၊ mounted data နဲ့ external service တွေက image ထဲမှာ ပါလာတာ မဟုတ်ပါဘူး။
+အမှန်တကယ် အရေးကြီးတာက Application တစ်ခုကို တည်ဆောက်တဲ့အချိန်၊ Server ပေါ်တင်တဲ့အချိန်နဲ့ နေရာအမျိုးမျိုးမှာ ပြန်လည်အသုံးပြုတဲ့အချိန်တွေမှာ ကြုံတွေ့ရတဲ့ ပြဿနာတွေကို ဘယ်လိုလျှော့ချပေးနိုင်သလဲဆိုတာ ဖြစ်ပါတယ်။
 
-**Application တွေကို ခွဲပြီး run နိုင်ခြင်း။** Process visibility၊ filesystem view၊ network configuration နဲ့ privilege တွေကို workload အလိုက် စီစဉ်နိုင်ပါတယ်။ ဒီလိုခွဲထားခြင်းက application တစ်ခုက အခြားတစ်ခုကို မတော်တဆ ဝင်ရောက်သက်ရောက်မှု လျှော့ချပေးနိုင်ပေမဲ့ VM ရဲ့ isolation boundary နဲ့ တန်းတူတယ်လို့ မယူဆသင့်ပါဘူး။
+ပထမဆုံး အကျိုးကျေးဇူးက Application အတွက် လိုအပ်တဲ့ Software နဲ့ Library Version တွေကို တစ်စုတစ်စည်းတည်း သိမ်းဆည်းနိုင်ခြင်း ဖြစ်ပါတယ်။
 
-**Deployment ကို ထပ်လုပ်နိုင်ခြင်း။** Image ကို tag သို့မဟုတ် digest နဲ့ သတ်မှတ်ထားပြီး တူညီတဲ့ artifact ကို environment မတူတဲ့နေရာတွေမှာ အသုံးပြုနိုင်ပါတယ်။ ဒါပေမဲ့ application configuration၊ secrets၊ persistent data နဲ့ external dependency တွေကို သီးခြားစီ စီမံရပါသေးပါတယ်။
+ဥပမာ Developer တစ်ယောက်က ကိုယ့်ကွန်ပျူတာမှာ Application တစ်ခုကို ရေးသားထားတယ်ဆိုပါစို့။ အဲဒီ Application အတွက် Python Version၊ Package နဲ့ Library တွေကို Image ထဲမှာ ထည့်သွင်းထားနိုင်ပါတယ်။ အဲဒီ Image ကို အသုံးပြုပြီး အခြား Server တစ်လုံးပေါ်မှာလည်း Application ကို အလားတူပတ်ဝန်းကျင်နဲ့ Run လုပ်နိုင်ပါတယ်။
 
-**Host resource ကို ပိုမိုအသုံးချနိုင်ခြင်း။** ပုံမှန် OS-level container တစ်ခုစီအတွက် guest kernel တစ်ခုစီ boot လုပ်စရာ မလိုတဲ့အတွက် VM အများအပြားကို run လုပ်ခြင်းထက် startup overhead နည်းနိုင်ပါတယ်။ သို့သော် container က အမြဲပိုမြန်တယ်လို့ မဆိုနိုင်ပါဘူး။ Performance နဲ့ workload density ဟာ application ရဲ့ CPU၊ memory၊ I/O အသုံးပြုမှု၊ kernel၊ runtime နဲ့ security configuration တို့ပေါ် မူတည်ပါတယ်။
+ဒါကြောင့် Developer ရဲ့ ကွန်ပျူတာမှာ အလုပ်လုပ်ပေမဲ့ Production Server မှာ မလုပ်တော့တဲ့ ပြဿနာတွေကို လျှော့ချနိုင်ပါတယ်။
 
-## 5. Container နဲ့ Virtual Machine ဘာကွာသလဲ
+နောက်ထပ်အကျိုးကျေးဇူးတစ်ခုက Application တွေကို သီးခြားခွဲပြီး Run လုပ်နိုင်ခြင်းဖြစ်ပါတယ်။ Application တစ်ခုစီအတွက် Process၊ Filesystem၊ Network နဲ့ Permission တွေကို သင့်တော်သလို စီမံနိုင်ပါတယ်။ ဒီလိုပြုလုပ်ခြင်းကြောင့် Application တစ်ခုရဲ့ ပြဿနာက အခြား Application တွေကို မတော်တဆ ထိခိုက်စေနိုင်မှုကို လျှော့ချနိုင်ပါတယ်။
 
-Container နဲ့ VM ကို “ပေါ့ပါးတယ်”၊ “လေးလံတယ်” ဆိုတဲ့ စကားလုံးတွေနဲ့ပဲ နှိုင်းယှဉ်ရင် အရေးကြီးတဲ့အချက်တစ်ခု လွတ်သွားနိုင်ပါတယ်။ အဓိကကွာခြားချက်က **application ရဲ့ process တွေက ဘယ် kernel instance ကို အသုံးပြုနေသလဲ** ဆိုတာပါ။
+ဒါပေမဲ့ ဒီသီးခြားခွဲထားမှုဟာ Virtual Machine ရဲ့ Kernel Boundary နဲ့ တူညီတယ်လို့ မယူဆသင့်ပါဘူး။
 
-### 5.1 Virtual Machine
+Container ရဲ့ နောက်ထပ်အားသာချက်တစ်ခုက Deployment ကို ထပ်မံပြုလုပ်ရတာ ပိုမိုလွယ်ကူခြင်းဖြစ်ပါတယ်။ Image တစ်ခုကို Tag သို့မဟုတ် Digest နဲ့ သတ်မှတ်ထားပြီး တူညီတဲ့ Image ကို Development၊ Testing နဲ့ Production Environment တွေမှာ ပြန်လည်အသုံးပြုနိုင်ပါတယ်။
 
-VM တစ်ခုမှာ guest operating system အတွက် virtual hardware ကို hypervisor က ပံ့ပိုးပေးပါတယ်။ Guest OS တစ်ခုစီမှာ ကိုယ်ပိုင် kernel နဲ့ user space ရှိပြီး application တွေကို အဲဒီ guest kernel က စီမံပါတယ်။ Hypervisor က physical hardware နဲ့ VM တွေအကြား CPU၊ memory၊ storage နဲ့ network device တွေကို ခွဲဝေစီမံပေးပါတယ်။
+သို့သော် Application Configuration၊ Password၊ Persistent Data နဲ့ ပြင်ပ Service တွေကို သီးခြားစီ စီမံဖို့ လိုအပ်နေဆဲဖြစ်ပါတယ်။
 
-Hypervisor ကို ပုံမှန်အားဖြင့် Type 1 နဲ့ Type 2 ဟူ၍ ခွဲခြားလေ့ရှိပါတယ်။ Type 1 hypervisor ဟာ physical hardware ပေါ်မှာ တိုက်ရိုက် အလုပ်လုပ်ပြီး Type 2 hypervisor ကတော့ host operating system အပေါ်မှာ software layer တစ်ခုအဖြစ် အလုပ်လုပ်ပါတယ်။ ဒီခွဲခြားပုံက hypervisor နဲ့ host OS တို့ရဲ့ တည်နေရာကို အခြေခံထားတာဖြစ်ပြီး guest OS နှစ်မျိုးစလုံးမှာ ကိုယ်ပိုင် kernel ရှိပါတယ်။ [^23]
+နောက်ဆုံးအနေနဲ့ Host ရဲ့ Resource တွေကို ပိုမိုထိရောက်စွာ အသုံးပြုနိုင်ခြင်းဖြစ်ပါတယ်။ Container တစ်ခုစီအတွက် Operating System Kernel အသစ်တစ်ခုစီ Boot လုပ်စရာ မလိုတဲ့အတွက် VM အများအပြား Run လုပ်ခြင်းထက် စတင်အလုပ်လုပ်ဖို့ လိုအပ်တဲ့ အပိုကုန်ကျစရိတ် နည်းနိုင်ပါတယ်။
 
-```mermaid
-flowchart LR
-    subgraph T1["Type 1 — bare-metal hypervisor"]
-        H1[Physical hardware] --> V1[Hypervisor]
-        V1 --> G1[Guest OS A: kernel and user space]
-        V1 --> G2[Guest OS B: kernel and user space]
-    end
-    subgraph T2["Type 2 — hosted hypervisor"]
-        H2[Physical hardware] --> O2[Host OS and kernel]
-        O2 --> V2[Hosted hypervisor]
-        V2 --> G3[Guest OS: kernel and user space]
-    end
-```
+ဒါပေမဲ့ Container ဟာ အခြေအနေတိုင်းမှာ VM ထက် ပိုမြန်တယ်လို့ မဆိုနိုင်ပါဘူး။ Performance ဟာ Application ရဲ့ အလုပ်လုပ်ပုံ၊ CPU၊ Memory၊ Disk အသုံးပြုမှုနဲ့ Runtime Configuration တွေပေါ်မှာ မူတည်ပါတယ်။
 
-ပုံမှာ Type 1 နဲ့ Type 2 hypervisor တို့ရဲ့ အခြေခံ stack ကို နှိုင်းယှဉ်ပြထားပါတယ်။ Type 1 မှာ hypervisor က hardware ပေါ်မှာ တိုက်ရိုက် အလုပ်လုပ်ပြီး Type 2 မှာ host OS က အလယ်မှာ ရှိနေပါတယ်။ VM နှစ်မျိုးစလုံးမှာ guest kernel သီးခြားရှိတယ်ဆိုတာက ဒီအခန်းအတွက် အဓိကမှတ်သားရမယ့်အချက်ပါ။ VM ရှိခြင်းတစ်ခုတည်းနဲ့ လုံခြုံရေးပြဿနာအားလုံး ပြေလည်သွားတာတော့ မဟုတ်ပါဘူး။ Hypervisor၊ virtual device၊ host နဲ့ guest configuration တွေကိုလည်း သေချာစီမံရပါတယ်။
+## 5. Container နဲ့ Virtual Machine ဘာကွာသလဲ။
 
-VM နဲ့ container ကို အပြန်အလှန်ရွေးချယ်ရမယ့် ပုံစံတစ်မျိုးတည်းလို့လည်း မယူဆသင့်ပါဘူး။ လက်တွေ့မှာ VM တစ်ခုအတွင်း Linux ကို run လုပ်ပြီး အဲဒီ guest OS ရဲ့ kernel ပေါ်မှာ container များစွာကို ထပ်မံ run လုပ်ထားနိုင်ပါတယ်။ အဲဒီ architecture မှာ container တွေက physical host ရဲ့ kernel ကို တိုက်ရိုက် share လုပ်တာ မဟုတ်ဘဲ VM အတွင်းရှိ guest kernel ကို share လုပ်ကြတာ ဖြစ်ပါတယ်။
+Container နဲ့ Virtual Machine တို့ကို နှိုင်းယှဉ်တဲ့အခါ အမြဲတမ်း တွေ့ရတဲ့ စကားလုံးတွေက ပေါ့ပါးတယ်၊ လေးလံတယ်၊ မြန်တယ်၊ နှေးတယ် စတာတွေဖြစ်ပါတယ်။
 
-### 5.2 Linux OS-level container
+ဒါပေမဲ့ တကယ်တမ်း အရေးကြီးတဲ့ ကွာခြားချက်က Application တွေဟာ ဘယ် Linux Kernel ကို အသုံးပြုနေကြသလဲဆိုတာ ဖြစ်ပါတယ်။
 
-ပုံမှန် Linux OS-level container မှာ host kernel တစ်ခုတည်းက host process တွေနဲ့ container process တွေကို စီမံပေးပါတယ်။ Container တစ်ခုစီမှာ root filesystem သီးခြားထားနိုင်သလို PID၊ mount နဲ့ network namespace view တွေကိုလည်း ခွဲထားနိုင်ပါတယ်။ ဒါပေမဲ့ container တစ်ခုစီမှာ guest kernel တစ်ခုစီ မရှိပါဘူး။
+ဒီအချက်ကို နားလည်ဖို့ Virtual Machine ရဲ့ အလုပ်လုပ်ပုံကို အရင်လေ့လာကြည့်ရအောင်။
+
+### 5.1 Virtual Machine ဆိုတာဘာလဲ။
+
+Virtual Machine ဆိုတာ Physical Computer တစ်လုံးရဲ့ Hardware အရင်းအမြစ်တွေကို အသုံးပြုပြီး Computer အတုတစ်လုံး ဖန်တီးပေးတဲ့ နည်းပညာဖြစ်ပါတယ်။
+
+VM တစ်ခုမှာ ကိုယ်ပိုင် CPU၊ Memory၊ Storage နဲ့ Network Device တွေ ရှိသလို အသုံးပြုနိုင်ပါတယ်။ အဲဒီ Hardware တွေဟာ Physical Hardware အစစ်တွေ မဟုတ်ဘဲ Software ကနေ ဖန်တီးပေးထားတဲ့ Virtual Hardware တွေ ဖြစ်ပါတယ်။
+
+VM တွေကို ဖန်တီးပြီး စီမံပေးတဲ့ Software ကို Hypervisor လို့ ခေါ်ပါတယ်။
+
+ဥပမာ Physical Server တစ်လုံးမှာ RAM 64 GB ရှိတယ်ဆိုပါစို့။ Hypervisor ကို အသုံးပြုပြီး VM သုံးခု ဖန်တီးနိုင်ပါတယ်။ VM တစ်ခုစီအတွက် CPU နဲ့ Memory ကို သီးခြားစီ သတ်မှတ်ပေးနိုင်ပါတယ်။
+
+VM တစ်ခုစီမှာ Windows သို့မဟုတ် Linux လို Operating System တစ်ခုစီ Install လုပ်နိုင်ပါတယ်။ ဒီ Operating System ကို Guest OS လို့ ခေါ်ပါတယ်။
+
+Guest OS တစ်ခုစီမှာ ကိုယ်ပိုင် Kernel နဲ့ Application တွေ ရှိပါတယ်။ ဒါကြောင့် VM တစ်ခုထဲက Application တွေကို အဲဒီ VM ရဲ့ Guest Kernel က စီမံပေးပြီး အခြား VM တွေရဲ့ Application တွေကိုတော့ သက်ဆိုင်ရာ Guest Kernel တွေက သီးခြားစီ စီမံပေးပါတယ်။
+
+Hypervisor တွေကို ပုံမှန်အားဖြင့် Type 1 နဲ့ Type 2 ဆိုပြီး နှစ်မျိုးခွဲခြားလေ့ရှိပါတယ်။
+
+Type 1 Hypervisor က Physical Hardware ပေါ်မှာ တိုက်ရိုက် အလုပ်လုပ်ပါတယ်။ Type 2 Hypervisor ကတော့ မူလ Operating System တစ်ခုအပေါ်မှာ Software တစ်ခုအဖြစ် အလုပ်လုပ်ပါတယ်။
+
+ဥပမာ Type 2 Hypervisor ကို အသုံးပြုပြီး Windows Computer တစ်လုံးအတွင်း Linux VM တစ်ခု Run လုပ်နိုင်ပါတယ်။
+
+နှစ်မျိုးလုံးမှာ Guest OS တစ်ခုစီအတွက် ကိုယ်ပိုင် Kernel ရှိနေတယ်ဆိုတာက အရေးကြီးဆုံးအချက်ဖြစ်ပါတယ်။
+
+VM ရှိနေတာတစ်ခုတည်းနဲ့ Security ပြဿနာအားလုံး ပြေလည်သွားတာတော့ မဟုတ်ပါဘူး။ Hypervisor၊ Host OS၊ Guest OS နဲ့ Virtual Device တွေကိုလည်း မှန်ကန်စွာ စီမံဖို့ လိုအပ်ပါတယ်။
+
+### 5.2 Linux OS-level Container
+
+ပုံမှန် Linux Container တွေရဲ့ အလုပ်လုပ်ပုံက VM နဲ့ မတူပါဘူး။
+
+VM တစ်ခုစီမှာ Guest Kernel သီးခြားရှိပေမဲ့ Linux Container တွေကတော့ Host ရဲ့ Linux Kernel ကိုပဲ အတူမျှဝေသုံးကြပါတယ်။
+
+ဒီ Container တွေဟာ ကိုယ်ပိုင် Root Filesystem ရှိသလို အလုပ်လုပ်နိုင်ပါတယ်။ ဒါပေမဲ့ Container နှစ်ခုစလုံးရဲ့ Process တွေကို Linux Kernel တစ်ခုတည်းကပဲ စီမံပေးနေပါတယ်။
+
+အောက်ကပုံမှာ VM နဲ့ ပုံမှန် Linux Container တို့ရဲ့ Kernel Boundary ကွာခြားချက်ကို ကြည့်နိုင်ပါတယ်။ VM တစ်ခုစီမှာ Guest Kernel ရှိပေမဲ့ Container တွေကတော့ Host ရဲ့ Linux Kernel ကို မျှဝေသုံးကြတာကို သတိပြုပါ။
 
 ```mermaid
 flowchart TB
-    subgraph HOST["Linux host"]
-        K[Shared Linux kernel]
-        HP[Host processes]
-        subgraph A["Container A"]
-            FA[Root filesystem A]
-            PA[Application process tree A]
-        end
-        subgraph B["Container B"]
-            FB[Root filesystem B]
-            PB[Application process tree B]
-        end
-        K --> HP
-        K --> PA
-        K --> PB
-        FA -.->|mounted as process A rootfs| PA
-        FB -.->|mounted as process B rootfs| PB
-    end
+  subgraph VMHOST["Virtual Machine ပုံစံ"]
+    direction TB
+    HW1["Physical Hardware"] --> HV["Hypervisor"]
+    HV --> VM1["VM 1 · Guest OS + Kernel"]
+    HV --> VM2["VM 2 · Guest OS + Kernel"]
+    VM1 --> VA["Application A"]
+    VM2 --> VB["Application B"]
+  end
+  subgraph CONTAINERHOST["ပုံမှန် Linux Container ပုံစံ"]
+    direction TB
+    HW2["Physical Hardware"] --> HOSTOS["Host OS"]
+    HOSTOS --> KERNEL["Linux Kernel တစ်ခုတည်း"]
+    KERNEL --> CA["Container A · Process + Root FS"]
+    KERNEL --> CB["Container B · Process + Root FS"]
+  end
 ```
 
-ပုံမှာ container တစ်ခုစီအတွက် root filesystem သီးခြားထားနိုင်ပုံကို ပြထားပါတယ်။ သို့သော် system call တွေကို လက်ခံပြီး process တွေကို စီမံပေးနေတဲ့ kernel က တစ်ခုတည်း ဖြစ်နေဆဲပါ။ Container A နဲ့ Container B တို့ရဲ့ filesystem view မတူနိုင်ပေမဲ့ kernel ကို မျှဝေသုံးနေကြပါတယ်။
+Container တစ်ခုစီမှာ Guest Kernel အသစ်တစ်ခု Boot လုပ်စရာမလိုတာကြောင့် VM လို Operating System အပြည့်အစုံတစ်ခုစီ လည်ပတ်နေစရာ မလိုပါဘူး။
 
-### 5.3 အဓိကကွာခြားချက်များ
+ဒါဟာ Container တွေ ပေါ့ပါးပြီး စတင်အသုံးပြုရတာ ပိုမြန်နိုင်တဲ့ အကြောင်းရင်းတွေထဲက တစ်ခုဖြစ်ပါတယ်။
 
-| အချက် | Linux OS-level container | Virtual Machine |
+### 5.3 Container နဲ့ VM ရဲ့ အဓိကကွာခြားချက်များ
+
+| အကြောင်းအရာ | Container | Virtual Machine |
 |---|---|---|
-| Kernel | ပုံမှန် model မှာ host Linux kernel ကို မျှဝေသုံးတယ် | Guest OS တစ်ခုစီမှာ ကိုယ်ပိုင် kernel ရှိတယ် |
-| Filesystem | Container အလိုက် root filesystem သီးခြားပြင်ဆင်နိုင်တယ် | Guest OS ရဲ့ disk/filesystem ရှိတယ် |
-| Isolation | Namespaces၊ cgroups၊ capabilities၊ mounts နဲ့ security controls | Hypervisor/virtualization boundary နဲ့ guest OS controls |
-| စတင်ပုံ | Guest kernel boot မလိုဘဲ process ကို စတင်နိုင်တယ် | Guest OS ကို boot လုပ်ရတယ် |
-| Resource management | Host kernel က process နဲ့ cgroup အလိုက် စီမံတယ် | Hypervisor က VM အတွက် virtual CPU၊ memory၊ device စတာတွေ ပေးတယ် |
-| OS ရွေးချယ်နိုင်မှု | Shared-kernel model ကြောင့် host kernel နဲ့ ကိုက်ညီတဲ့ OS family/ABI ကို အသုံးပြုရတယ် | Hypervisor က ပံ့ပိုးနိုင်တဲ့ guest OS မျိုးစုံကို အသုံးပြုနိုင်တယ် |
+| Kernel | Host Kernel ကို မျှဝေသုံးတယ် | Guest Kernel သီးခြားရှိတယ် |
+| Filesystem | Container အလိုက် Root FS ခွဲနိုင်တယ် | VM အလိုက် Virtual Disk ရှိတယ် |
+| စတင်အသုံးပြုမှု | Guest Kernel Boot မလို | Guest OS Boot လုပ်ရတယ် |
+| Resource | ပုံမှန်အားဖြင့် အပိုကုန်ကျစရိတ် နည်းတယ် | Guest OS အတွက် Resource လိုတယ် |
+| Isolation | Kernel ရဲ့ ခွဲခြားထိန်းချုပ်မှုများ | Hypervisor နဲ့ Guest OS Boundary |
+| OS ရွေးချယ်မှု | Host Kernel နဲ့ ကိုက်ညီမှု လိုတယ် | Hypervisor ပံ့ပိုးတဲ့ Guest OS မျိုးစုံ သုံးနိုင်တယ် |
 
-ဒီဇယားက ပုံမှန် Linux OS-level container နဲ့ VM ကို နှိုင်းယှဉ်ထားတာပါ။ Container က VM ထက် ဘယ်အခြေအနေမှာမဆို ပိုကောင်းတယ်လို့ ဆိုလိုတာ မဟုတ်ပါဘူး။ Application ရဲ့ လိုအပ်ချက်၊ trust boundary၊ host management နဲ့ လုပ်ငန်းလည်ပတ်ပုံတို့ကို ကြည့်ပြီး ရွေးချယ်ရပါတယ်။
+ဒီနေရာမှာ Container က VM ထက် အမြဲတမ်း ပိုကောင်းတယ်လို့ မယူဆသင့်ပါဘူး။
 
-### 5.4 Container လို့ခေါ်တိုင်း host kernel ကို မျှဝေသုံးတာလား
+ဥပမာ Server တစ်လုံးမှာ မတူညီတဲ့ Operating System တွေကို သီးခြား Kernel နဲ့ Run လုပ်ဖို့ လိုအပ်တယ်ဆိုရင် VM က ပိုသင့်တော်နိုင်ပါတယ်။
 
-Container ဟု ခေါ်ဆိုသည့် workload အားလုံးသည် အောက်ခံ isolation implementation တစ်မျိုးတည်းကို အသုံးပြုကြတာ မဟုတ်ပါဘူး။ **Kata Containers** က ဥပမာတစ်ခုပါ။ Kata Containers က container workload ကို lightweight VM တစ်ခုအတွင်း run လုပ်ပြီး guest kernel သီးခြား အသုံးပြုစေပါတယ်။ ထိုအခါ container workflow နဲ့ OCI runtime interface ကို အသုံးပြုနေပေမဲ့ workload က host kernel ကို တိုက်ရိုက် share လုပ်တာ မဟုတ်ပါဘူး။ [^16]
+Application အများအပြားကို တူညီတဲ့ Linux Kernel ပေါ်မှာ ပေါ့ပါးစွာ Run လုပ်ချင်တယ်ဆိုရင်တော့ Container က ပိုသင့်တော်နိုင်ပါတယ်။
 
-ဒါကြောင့် ဒီစာအုပ်မှာ “host kernel ကို မျှဝေသုံးတယ်” လို့ ရေးထားတဲ့အခါ **ပုံမှန် Linux OS-level container model** ကိုသာ ရည်ညွှန်းပါတယ်။ Container management interface၊ image format နဲ့ အောက်ခံ isolation နည်းပညာတို့ဟာ မတူညီတဲ့ အလွှာတွေ ဖြစ်ကြပါတယ်။
+လက်တွေ့လုပ်ငန်းတွေမှာ VM နဲ့ Container ကို အတူတကွ အသုံးပြုတာလည်း ရှိပါတယ်။ ဥပမာ VM တစ်ခုအတွင်း Linux Operating System တင်ထားပြီး အဲဒီ VM ရဲ့ Kernel ပေါ်မှာ Container အများအပြား Run လုပ်နိုင်ပါတယ်။
+
+ဒီလိုအခြေအနေမှာ Container တွေဟာ Physical Host ရဲ့ Kernel ကို တိုက်ရိုက်မျှဝေသုံးတာ မဟုတ်ဘဲ VM အတွင်းရှိ Guest Linux Kernel ကို မျှဝေသုံးနေကြတာ ဖြစ်ပါတယ်။
+
+### 5.4 Container လို့ခေါ်တိုင်း Host Kernel ကို မျှဝေသုံးတာလား။
+
+ယခုအထိ ရှင်းပြခဲ့တဲ့ Container တွေဟာ ပုံမှန် Linux OS-level Container တွေကို အခြေခံထားပါတယ်။
+
+ဒါပေမဲ့ Container လို့ခေါ်တိုင်း အောက်ခံနည်းပညာ အားလုံး တူညီနေကြတာတော့ မဟုတ်ပါဘူး။
+
+ဥပမာ Kata Containers ဆိုတဲ့ နည်းပညာတစ်ခု ရှိပါတယ်။ ဒီနည်းပညာက Container တွေရဲ့ အသုံးပြုပုံနဲ့ Workflow ကို ထိန်းသိမ်းထားနိုင်ပေမဲ့ အောက်ခံမှာ Lightweight Virtual Machine ကို အသုံးပြုပြီး Guest Kernel သီးခြား Run လုပ်စေပါတယ်။ [20]
+
+ဒါကြောင့် Kata Containers ကို အသုံးပြုထားတဲ့အခါ Container Workload က Physical Host ရဲ့ Kernel ကို တိုက်ရိုက်မျှဝေသုံးနေတာ မဟုတ်ပါဘူး။
+
+ဒီအချက်ကို သိထားဖို့ အရေးကြီးပါတယ်။ Container ဆိုတဲ့စကားလုံးဟာ Application တွေကို စီမံတဲ့ နည်းလမ်းနဲ့ Image Format ကို ရည်ညွှန်းနိုင်သလို အောက်ခံ Isolation နည်းပညာကတော့ မတူညီနိုင်ပါဘူး။
+
+ဒီစာအုပ်မှာ Linux Container လို့ ပြောတဲ့အခါ ပုံမှန် Linux OS-level Container ပုံစံကို အဓိက ရည်ညွှန်းသွားပါမယ်။
 
 ## 6. Container များဆီသို့ ရောက်လာတဲ့ သမိုင်းလမ်းကြောင်း
 
-Container ကို Docker က 2013 ခုနှစ်မှာ စတင်တီထွင်ခဲ့တယ်လို့ ထင်လွယ်ပါတယ်။ တကယ်တော့ workload တစ်ခုကို အခြား workload တွေနဲ့ ခွဲပြီး run လုပ်ဖို့ ကြိုးစားခဲ့တဲ့ နည်းလမ်းတွေဟာ Docker မတိုင်ခင်ကတည်းက ရှိနေခဲ့ပါတယ်။ Unix ရဲ့ filesystem boundary၊ FreeBSD ရဲ့ Jails၊ Solaris ရဲ့ Zones နဲ့ Linux ရဲ့ kernel containment facilities တွေဟာ operating system မတူတဲ့နေရာတွေမှာ သီးခြားတိုးတက်လာခဲ့ကြတာပါ။ ဒီနည်းပညာတွေကို တစ်ခုကနေတစ်ခု တိုက်ရိုက်ဆက်ခံခဲ့တဲ့ တစ်ကြောင်းတည်းသော သမိုင်းကြောင်းလို့ မဖတ်သင့်ပါဘူး။
+Container အကြောင်း စလေ့လာတဲ့အခါ Docker ကို ပထမဆုံး သတိရမိကြပါတယ်။ Docker ဟာ Container နည်းပညာကို လူသိများလာအောင် အရေးပါတဲ့ အခန်းကဏ္ဍကနေ ကူညီပေးခဲ့တာ မှန်ပါတယ်။ ဒါပေမဲ့ Container နည်းပညာရဲ့ အခြေခံစိတ်ကူးတွေဟာ Docker မပေါ်ခင်ကတည်းက ရှိနေခဲ့ပါတယ်။
 
-| အချိန် | နည်းပညာ | မှတ်သားရန် |
+Operating System တစ်ခုတည်းအတွင်းမှာ Application တွေကို သီးခြားခွဲပြီး Run လုပ်နိုင်ဖို့ Unix နဲ့ အခြား Operating System တွေမှာ နည်းလမ်းအမျိုးမျိုး တီထွင်ခဲ့ကြပါတယ်။ အောက်က Timeline က အဲဒီသမိုင်းလမ်းကြောင်းထဲက အရေးပါတဲ့ မှတ်တိုင်အချို့ကို စုစည်းပြထားတာပါ။
+
+| အချိန် | နည်းပညာ | အဓိကအချက် |
 |---|---|---|
-| Unix Version 7 ခေတ်၊ 1979 | `chroot` | Process ရဲ့ pathname resolution root ကို ပြောင်းလဲပေးတဲ့ filesystem mechanism။ တစ်ခုတည်းနဲ့ complete isolation မရပါ။ [^17] |
-| FreeBSD 4.0၊ 2000 | Jails | `jail()` system call ကို FreeBSD 4.0 မှာ ထည့်သွင်းခဲ့ပြီး filesystem တစ်ခုတည်းထက် ပိုကျယ်တဲ့ isolation ကို ပေးဖို့ ရည်ရွယ်ခဲ့ပါတယ်။ [^11][^12] |
-| Solaris Express 2/04၊ 2004 | Solaris Zones | Zones ကို Solaris Express 2/04 မှာ စတင်မိတ်ဆက်ခဲ့ပြီး Solaris 10 3/05 release မှာလည်း ပါဝင်လာပါတယ်။ [^13] |
-| 2008 မှစ၍ | LXC | Linux kernel containment features တွေကို userspace library နဲ့ tool တွေကနေ အသုံးပြုနိုင်အောင် တိုးတက်လာတဲ့ project။ [^14] |
-| 15 နှင့် 23 March 2013 | Docker | 15 March မှာ public demo ပြသခဲ့ပြီး 23 March မှာ Docker 0.1.0 ကို initial public release အဖြစ် ထုတ်ခဲ့ပါတယ်။ [^15] |
-| 22 June 2015 | OCI | Container image format နဲ့ runtime interoperability အတွက် open specification တွေ ဖော်ထုတ်ဖို့ OCI ကို စတင်ဖွဲ့စည်းခဲ့ပါတယ်။ [^6] |
+| 1979 ဝန်းကျင် | Unix `chroot` | Process တစ်ခုအတွက် မြင်ရတဲ့ Root Directory ကို ပြောင်းပေးတယ်။ [1][2] |
+| 2000 | FreeBSD Jails | `chroot` အယူအဆကို Filesystem၊ User နဲ့ Network ပိုင်းအထိ ချဲ့ထွင်တယ်။ [3] |
+| 2005 | Solaris Zones | Solaris 10 မှာ OS Service တွေကို သီးခြား Environment အဖြစ် စီမံနိုင်စေတယ်။ [4] |
+| 2008 မှစ၍ | LXC | Linux Kernel ရဲ့ Namespace၊ cgroups စတဲ့ Feature တွေကို အသုံးပြုပြီး System Container တွေ ဖန်တီးတယ်။ [5] |
+| 15–23 မတ် 2013 | Docker | Public Demo ပြသပြီး မကြာခင် ပထမဆုံး Public Release ထုတ်ဝေတယ်။ [6][7] |
+| 22 ဇွန် 2015 | OCI | Container Image၊ Runtime နဲ့ Distribution အတွက် Open Standard တွေ ဖန်တီးဖို့ စတင်ဖွဲ့စည်းတယ်။ [8] |
 
-ဒီ timeline ကို တစ်ဆင့်ပြီးတစ်ဆင့် ဆက်ခံလာတဲ့ တီထွင်မှုစာရင်းအဖြစ် မဖတ်သင့်ပါဘူး။ Operating system မတူညီတဲ့ နေရာတွေမှာ isolation ပြဿနာကို ဖြေရှင်းဖို့ ကြိုးပမ်းခဲ့ကြတဲ့ milestone တွေအဖြစ်သာ ကြည့်သင့်ပါတယ်။
+ဒီနည်းပညာတွေဟာ အားလုံး တစ်ခုကနေတစ်ခု တိုက်ရိုက် ဆင်းသက်လာတယ်လို့ မဆိုလိုပါဘူး။ Operating System မတူတဲ့ နေရာတွေမှာ သီးခြားတိုးတက်လာခဲ့ကြပေမဲ့ Application တွေကို ခွဲခြား Run လုပ်ဖို့ဆိုတဲ့ ပြဿနာတူကို ဖြေရှင်းဖို့ ကြိုးစားခဲ့ကြတာပါ။
 
 ### 6.1 `chroot`
 
-`chroot()` သည် process တစ်ခု၏ pathname resolution အတွက် အသုံးပြုမည့် root directory ကို ပြောင်းလဲပေးသော system call ဖြစ်ပါတယ်။ ဥပမာ process တစ်ခုရဲ့ root ကို `/srv/jail` သို့ ပြောင်းထားပါက `/etc/app.conf` ကို ဖွင့်တဲ့အခါ `/srv/jail/etc/app.conf` ကို အခြေခံပြီး ရှာဖွေသွားပါမယ်။
+`chroot` ဟာ Container သမိုင်းကြောင်းမှာ အစောပိုင်းကတည်းက ရှိခဲ့တဲ့ Filesystem နည်းလမ်းတစ်ခုဖြစ်ပါတယ်။ Unix Version 7 ခေတ်၊ 1979 ဝန်းကျင်ကတည်းက အသုံးပြုလာခဲ့ပါတယ်။ [1]
 
-သို့သော် `chroot()` လုပ်လိုက်တာနဲ့ process ရဲ့ current working directory ကို အလိုအလျောက် ပြောင်းမပေးပါဘူး။ ဖွင့်ထားပြီးသား file descriptor တွေကိုလည်း ပိတ်မပေးပါဘူး။ ထို့ကြောင့် process တစ်ခုကို `chroot()` လုပ်ထားရုံနဲ့ root directory အပြင်ဘက်က file တွေကို လုံးဝမရောက်နိုင်တော့ဘူးလို့ မဆိုနိုင်ပါဘူး။ Linux `chroot(2)` manual ကလည်း `chroot()` ကို security sandbox အဖြစ် ရည်ရွယ်ထားတာ မဟုတ်ကြောင်း ရှင်းလင်းစွာ သတိပေးထားပါတယ်။ [^1]
+`chroot()` ရဲ့ အဓိကအလုပ်က Process တစ်ခုနဲ့ သူ့ရဲ့ Child Process တွေအတွက် File Path တွေကို ဖြေရှင်းရာမှာ အသုံးပြုမယ့် Root Directory ကို ပြောင်းပေးတာပါ။ ဥပမာ Process ရဲ့ Root ကို `/srv/jail` လို့ သတ်မှတ်ထားရင် `/etc/app.conf` ကို ဖွင့်တဲ့အခါ Host ရဲ့ `/etc/app.conf` မဟုတ်ဘဲ `/srv/jail/etc/app.conf` ကို အခြေခံပြီး ရှာပါလိမ့်မယ်။ [2]
 
-`chroot()` ရဲ့ အဓိကတာဝန်က filesystem path တွေကို ဖြေရှင်းရာမှာ အသုံးပြုမယ့် root ကို ပြောင်းပေးခြင်းပါ။ PID view၊ network stack၊ UID/GID mapping၊ CPU/memory resource control နဲ့ kernel privilege တွေကို အလိုအလျောက် ခွဲပေးတာ မဟုတ်ပါဘူး။ ဒါကြောင့် container isolation တစ်ခုလုံးကို `chroot()` တစ်ခုတည်းနဲ့ မတည်ဆောက်နိုင်ပါဘူး။
+ဒါပေမဲ့ `chroot()` တစ်ခုတည်းနဲ့ လုံခြုံတဲ့ Sandbox တစ်ခု ပြည့်စုံသွားတာ မဟုတ်ပါဘူး။ Root Directory ပြောင်းတာဟာ Process ရဲ့ PID၊ Network၊ CPU၊ Memory နဲ့ Permission တွေကို သီးခြားခွဲပေးတာ မဟုတ်သလို၊ လက်ရှိဖွင့်ထားတဲ့ File Descriptor တွေကိုလည်း အလိုအလျောက် ပိတ်ပေးတာ မဟုတ်ပါဘူး။ ဒီကွာခြားချက်ကို `chroot` ကို လုံခြုံရေးအပြည့်ရှိတဲ့ Container လို့ မယူဆဖို့ သတိထားပါ။ [2]
 
 ### 6.2 FreeBSD Jails
 
-FreeBSD Jails က `chroot` နဲ့ ဆက်စပ်တဲ့ filesystem separation ကို ပိုမိုကျယ်ပြန့်တဲ့ OS-level isolation အဖြစ် တိုးချဲ့ထားပါတယ်။ FreeBSD Handbook အရ Jails ဟာ FreeBSD 4.X ကတည်းက ရှိခဲ့ပြီး filesystem၊ user နဲ့ network subsystem တွေကို သီးခြားစီမံနိုင်တဲ့ environment တစ်ခု ဖန်တီးပေးပါတယ်။ `jail()` system call ကို FreeBSD 4.0 မှာ စတင်ထည့်သွင်းခဲ့ကြောင်း manual page ရဲ့ HISTORY အပိုင်းမှာ ဖော်ပြထားပါတယ်။ [^11][^12]
+FreeBSD Jails ကို FreeBSD 4.0 မှာ ထည့်သွင်းခဲ့ပြီး FreeBSD Project ရဲ့ Release မှတ်တမ်းအရ 4.0 ကို 2000 ခုနှစ် မတ်လမှာ ထုတ်ဝေခဲ့ပါတယ်။ [3]
 
-Jails နဲ့ Linux namespaces တို့ဟာ workload isolation ကို ရည်ရွယ်ကြပေမဲ့ implementation တူညီတာ မဟုတ်ပါဘူး။ Kernel၊ API နဲ့ resource model တွေ မတူကြတဲ့အတွက် Jails ကို Linux namespace implementation တစ်ခုအဖြစ် မရှင်းပြသင့်ပါဘူး။
+`chroot` က Filesystem Path တွေကို အဓိကထားပြီး ပြောင်းပေးတာဖြစ်ပေမဲ့ Jails က Filesystem အပြင် User နဲ့ Network Subsystem တို့ကိုပါ သီးခြားပတ်ဝန်းကျင်အဖြစ် စီမံနိုင်စေပါတယ်။ ဒါကြောင့် FreeBSD Server တစ်လုံးပေါ်မှာ Service အမျိုးမျိုးကို Jail တစ်ခုစီအတွင်း သီးခြား Run လုပ်နိုင်ပါတယ်။ [3]
+
+FreeBSD Jails နဲ့ Linux Namespaces တို့ဟာ ရည်ရွယ်ချက်ချင်း ဆင်တူပေမဲ့ အတွင်းပိုင်းလုပ်ဆောင်ပုံနဲ့ Kernel API တွေ မတူကြပါဘူး။ Jails ကို Linux Namespaces ရဲ့ ပုံစံတစ်မျိုးလို့ မယူဆသင့်ပါဘူး။
 
 ### 6.3 Solaris Zones
 
-Solaris Zones က Solaris operating system တစ်ခုအတွင်း application နဲ့ service တွေအတွက် ခွဲခြားထားတဲ့ execution environment တွေ ဖန်တီးပေးပါတယ်။ Oracle ရဲ့ documentation အရ Zones ကို Solaris Express 2/04 မှာ စတင်မိတ်ဆက်ခဲ့ပြီး Solaris 10 3/05 release မှာလည်း ပါဝင်ခဲ့ပါတယ်။ [^13]
+Solaris Zones ဟာ Solaris Operating System တစ်ခုတည်းအတွင်း Application နဲ့ Service တွေအတွက် သီးခြား Environment တွေ ဖန်တီးပေးတဲ့ နည်းပညာဖြစ်ပါတယ်။ Solaris 10 3/05 Release မှာ Zones ကို Operating System Service တွေကို Virtualize လုပ်ပြီး Isolated Environment ပေးနိုင်တဲ့ နည်းပညာအဖြစ် မိတ်ဆက်ခဲ့ပါတယ်။ [4]
 
-Zones ဟာ hypervisor တစ်ခုက guest OS အများအပြားကို boot လုပ်ပေးတဲ့ပုံစံ မဟုတ်ပါဘူး။ Solaris OS instance တစ်ခုအတွင်း operating-system services တွေကို partition လုပ်ပေးတဲ့ technology ဖြစ်ပါတယ်။ Solaris Zones နဲ့ Linux container mechanism တွေကို တိုက်ရိုက်တူညီတယ်လို့ မဆိုရပေမဲ့ OS-level isolation ကို ဘယ်လိုတည်ဆောက်နိုင်သလဲဆိုတဲ့ သမိုင်းအတွက် အရေးပါတဲ့ ဥပမာတစ်ခုပါ။
+Zone တစ်ခုစီဟာ ကိုယ်ပိုင်စနစ်တစ်ခုလို အလုပ်လုပ်နိုင်ပေမဲ့ အောက်ခံ Solaris OS Instance တစ်ခုတည်းရဲ့ စီမံခန့်ခွဲမှုအောက်မှာ ရှိနေပါတယ်။ ဒီအချက်ကြောင့် VM တစ်ခုစီမှာ Guest OS သီးခြား Boot လုပ်တဲ့ပုံစံနဲ့ မတူပါဘူး။ [4]
 
-### 6.4 LXC
+### 6.4 LXC — Linux Containers
 
-LXC (Linux Containers) က Linux kernel ရဲ့ containment features တွေကို userspace ကနေ အသုံးပြုနိုင်ဖို့ library နဲ့ tools ပေးတဲ့ project ဖြစ်ပါတယ်။ LXC ရဲ့ upstream README အရ project ကို 2008 ခုနှစ်ကတည်းက ဆက်လက်ဖွံ့ဖြိုးနေခဲ့ပါတယ်။ Namespaces၊ mandatory access control နဲ့ control groups တို့ကို ပေါင်းစပ်အသုံးပြုပြီး သီးခြား system-container environment တစ်ခု ဖန်တီးနိုင်ပါတယ်။ [^14]
+LXC ရဲ့ အရှည်ကောက်က Linux Containers ဖြစ်ပါတယ်။ LXC Project ဟာ 2008 ခုနှစ်ကစပြီး ဖွံ့ဖြိုးတိုးတက်လာခဲ့တဲ့ Low-level Linux Container Runtime တစ်ခုဖြစ်ပါတယ်။ [5]
 
-LXC ကို `chroot` ထက် option ပိုများတဲ့ command တစ်ခုလို့သာ နားလည်လို့ မရပါဘူး။ Linux kernel ရဲ့ isolation နဲ့ security feature တွေကို တွဲဖက်အသုံးပြုတဲ့ container-management project ဖြစ်ပါတယ်။
+LXC က Linux Kernel ရဲ့ Namespaces၊ Control Groups နဲ့ Security Feature တွေကို ပေါင်းစပ်အသုံးပြုပြီး VM နဲ့ ဆင်တူတဲ့ System Container Environment တွေ ဖန်တီးနိုင်ပါတယ်။ [5]
+
+ဒါကြောင့် LXC ကို `chroot` ထက် Command ပိုများတဲ့ Tool တစ်ခုလို့ပဲ နားလည်ထားလို့ မရပါဘူး။ Linux Kernel ရဲ့ Isolation နဲ့ Resource Control စွမ်းရည်တွေကို ပေါင်းစပ်အသုံးပြုတဲ့ Project တစ်ခုဖြစ်ပါတယ်။
 
 ### 6.5 Docker
 
-Docker က container နည်းပညာကို ပထမဆုံး တီထွင်ခဲ့တာ မဟုတ်ပါဘူး။ သို့သော် application ကို build လုပ်ခြင်း၊ package လုပ်ခြင်း၊ မျှဝေခြင်းနဲ့ run လုပ်ခြင်းတို့ကို တစ်ဆက်တည်း အသုံးပြုနိုင်တဲ့ workflow အဖြစ် လူသိများလာစေခဲ့ပါတယ်။ Docker ရဲ့ public demonstration ကို 15 March 2013 မှာ ပြသခဲ့ပြီး ပထမဆုံး public release ဖြစ်တဲ့ Docker 0.1.0 ကို 23 March 2013 မှာ ထုတ်ခဲ့ပါတယ်။ [^15]
+Docker ဟာ Container နည်းပညာကို ပထမဆုံး တီထွင်ခဲ့တာ မဟုတ်ပါဘူး။ ဒါပေမဲ့ Application တစ်ခုကို Build လုပ်ခြင်း၊ Image အဖြစ် Package ပြုလုပ်ခြင်း၊ Registry မှာ မျှဝေခြင်းနဲ့ အခြားနေရာမှာ ပြန် Run လုပ်ခြင်းတို့ကို တစ်ဆက်တည်း လုပ်ဆောင်နိုင်တဲ့ Workflow ကို ပိုမိုလွယ်ကူစေခဲ့ပါတယ်။
 
-Docker Engine မှာ CLI client၊ REST API နဲ့ `dockerd` daemon ပါဝင်တဲ့ client-server architecture ကို အသုံးပြုပါတယ်။ ဒီပုံစံက Docker Engine ရဲ့ architecture ဖြစ်ပြီး container engine အားလုံးက မဖြစ်မနေ လိုက်နာရတဲ့ပုံစံ မဟုတ်ပါဘူး။ [^10]
+Docker ကို 2013 ခုနှစ် မတ်လ 15 ရက်နေ့ PyCon မှာ ပထမဆုံး Public Demo ပြသခဲ့ပါတယ်။ ပထမဆုံး Public Release ဖြစ်တဲ့ Docker 0.1.0 ကို မတ်လ 23 ရက်နေ့မှာ ထုတ်ဝေခဲ့ပါတယ်။ [6][7]
+
+ဥပမာ အောက်ပါ Command တစ်ခုနဲ့ Nginx Web Server ကို စတင် Run လုပ်နိုင်ပါတယ်။
+
+```bash
+docker run nginx
+```
+
+ဒီ Command ကို ရိုးရှင်းစွာ ရိုက်နိုင်ပေမဲ့ နောက်ကွယ်မှာ Image ရယူခြင်း၊ Container Configuration ပြင်ဆင်ခြင်း၊ Runtime ကို ခေါ်သုံးခြင်းနဲ့ Linux Kernel ကို အသုံးပြုခြင်းတို့ ပါဝင်နေပါတယ်။ အဲဒီ Component တွေကို Section 8 မှာ ပြန်လည်ကြည့်ပါမယ်။
 
 ### 6.6 Open Container Initiative (OCI)
 
-Container tool တွေ များလာတဲ့အခါ image တစ်ခုကို runtime မတူတဲ့ tool တွေမှာ အပြန်အလှန်အသုံးပြုနိုင်ဖို့ common format နဲ့ behavior လိုအပ်လာပါတယ်။ OCI ကို 22 June 2015 မှာ Linux Foundation အောက်က open governance project အဖြစ် စတင်ဖွဲ့စည်းခဲ့ပြီး container format နဲ့ runtime ဆိုင်ရာ open industry standards တွေ တည်ဆောက်ဖို့ ရည်ရွယ်ခဲ့ပါတယ်။ [^6]
+Container Tool တွေ များပြားလာတဲ့အခါ Image Format နဲ့ Runtime အလုပ်လုပ်ပုံတွေ တစ်ခုနဲ့တစ်ခု မကိုက်ညီရင် Tool တစ်ခုက ဖန်တီးထားတဲ့ Image ကို အခြား Tool တစ်ခုမှာ အသုံးပြုဖို့ အခက်အခဲ ရှိလာနိုင်ပါတယ်။
 
-OCI မှာ အဓိက specification သုံးမျိုး ရှိပါတယ်။
+ဒီလိုအခြေအနေကို လျှော့ချဖို့ Docker၊ CoreOS နဲ့ Container လုပ်ငန်းက အခြားအဖွဲ့အစည်းတွေ ပူးပေါင်းပြီး Linux Foundation အောက်မှာ Open Container Initiative (OCI) ကို 2015 ခုနှစ် ဇွန်လ 22 ရက်နေ့မှာ စတင်ဖွဲ့စည်းခဲ့ပါတယ်။ [8]
 
-- **OCI Image Specification** က image ရဲ့ filesystem layers နဲ့ image configuration ကို ဘယ်လိုဖွဲ့စည်းထားသလဲဆိုတာ သတ်မှတ်ပါတယ်။
-- **OCI Runtime Specification** က disk ပေါ်မှာ ပြင်ဆင်ထားတဲ့ runtime bundle တစ်ခုကို runtime က ဘယ်လို configure လုပ်ပြီး process ကို ဘယ်လိုစတင်၊ ရပ်တန့်၊ ဖယ်ရှားရမလဲဆိုတာ သတ်မှတ်ပါတယ်။
-- **OCI Distribution Specification** က registry လို distribution service တွေကနေ image နဲ့ artifact တွေကို ဘယ်လို ပို့ဆောင်၊ ရယူမလဲဆိုတဲ့ protocol ကို သတ်မှတ်ပါတယ်။ [^7][^8][^9]
+OCI မှာ အဓိက Specification သုံးမျိုး ရှိပါတယ်။
 
-OCI သည် Docker Engine၊ Kubernetes သို့မဟုတ် container orchestration စနစ်တစ်ခုလုံးကို standardize လုပ်တာ မဟုတ်ပါဘူး။ Container ecosystem များအကြား image၊ runtime နဲ့ distribution ဆိုင်ရာ interoperability ရရှိစေဖို့ လိုအပ်တဲ့ အစိတ်အပိုင်းတွေကိုသာ သတ်မှတ်ပေးတာ ဖြစ်ပါတယ်။
+| Specification | ဘာကို သတ်မှတ်ပေးသလဲ။ |
+|---|---|
+| **Image Specification** | Image Manifest၊ Layer၊ Configuration နဲ့ Image Format ကို သတ်မှတ်ပေးတယ်။ [15] |
+| **Runtime Specification** | Disk ပေါ်မှာ ပြင်ဆင်ထားတဲ့ OCI Bundle ကို Runtime က ဘယ်လိုဖန်တီး၊ စတင်၊ Signal ပို့ပြီး ဖယ်ရှားရမယ်ဆိုတာ သတ်မှတ်ပေးတယ်။ [14] |
+| **Distribution Specification** | Registry နဲ့ Tool တွေကြား OCI Content တွေကို ဘယ်လို Push၊ Pull နဲ့ မျှဝေမယ်ဆိုတဲ့ API လုပ်ထုံးလုပ်နည်းကို သတ်မှတ်ပေးတယ်။ [16] |
 
-## 7. Container isolation တွင် Linux Kernel ၏ အခန်းကဏ္ဍ
+OCI ဟာ Docker Engine တစ်ခုလုံးကို Standard သတ်မှတ်ထားတာ မဟုတ်သလို Kubernetes ရဲ့ လုပ်ဆောင်ပုံအားလုံးကိုလည်း သတ်မှတ်ပေးတာ မဟုတ်ပါဘူး။ အဓိကက Image Format၊ Runtime Interface နဲ့ Content Distribution တို့အတွက် အပြန်အလှန် ကိုက်ညီနိုင်တဲ့ Standard တွေ ပံ့ပိုးပေးဖို့ ဖြစ်ပါတယ်။ [8]
 
-Linux container တစ်ခုကို kernel feature တစ်ခုတည်းနဲ့ တည်ဆောက်တာ မဟုတ်ပါဘူး။ Runtime က လိုအပ်တဲ့ kernel mechanism တွေကို စီစဉ်ပြီး application process ကို သတ်မှတ်ထားတဲ့ execution context အတွင်း စတင်စေပါတယ်။ အဓိက mechanism တွေက ဘယ်လို အခန်းကဏ္ဍယူထားသလဲဆိုတာကို အောက်မှာ ခွဲကြည့်ပါမယ်။
+## 7. Container Isolation မှာ Linux Kernel ရဲ့ အခန်းကဏ္ဍ
+
+Container တစ်ခုကို ဖန်တီးတဲ့အခါ Namespace တစ်ခုတည်းနဲ့ အလုပ်ပြီးသွားတာ မဟုတ်ပါဘူး။ Application တွေ မြင်ရတဲ့ပတ်ဝန်းကျင်၊ Resource အသုံးပြုမှု၊ Permission၊ Filesystem နဲ့ System Call တွေကို သီးခြားစီ စီမံဖို့ လိုပါတယ်။ ဒီအလုပ်တွေကို Linux Kernel Feature အမျိုးမျိုး ပူးပေါင်းလုပ်ဆောင်ပေးပါတယ်။
+
+အရင်ဆုံး အဲဒီ Feature တွေရဲ့ တာဝန်ကို တစ်နေရာတည်းမှာ ကြည့်ရအောင်။
+
+| Mechanism | အဓိကတာဝန် | ဥပမာ |
+|---|---|---|
+| Namespaces | Process တွေ မြင်ရတဲ့ System Resource ပတ်ဝန်းကျင်ကို ခွဲပေးတယ်။ | ကိုယ်ပိုင် PID၊ Hostname၊ Network View |
+| cgroups | Process အုပ်စုရဲ့ Resource အသုံးပြုမှုကို စောင့်ကြည့်၊ ထိန်းချုပ်တယ်။ | CPU၊ Memory၊ I/O Limit |
+| Capabilities | Root နဲ့ ဆက်စပ်တဲ့ Privilege တွေကို သီးခြားခွဲပေးတယ်။ | လိုအပ်မှ `CAP_NET_ADMIN` ပေးခြင်း |
+| Mount နဲ့ Root Filesystem | Container အတွက် မြင်ရမယ့် Filesystem Tree ကို ပြင်ဆင်တယ်။ | ကိုယ်ပိုင် `rootfs`၊ Read-only Mount |
+| Seccomp | Process က ခေါ်နိုင်တဲ့ System Call တွေကို Filter လုပ်တယ်။ | မလိုအပ်တဲ့ System Call ပိတ်ခြင်း |
+| LSM | အပို Security Policy တွေကို Kernel ထဲမှာ အကောင်အထည်ဖော်တယ်။ | SELinux၊ AppArmor |
+
+ဒီပုံက Mechanism တစ်ခုချင်းစီရဲ့ တာဝန်ကွဲပြားပုံကို အကျဉ်းချုပ်ပြထားတာပါ။ Container တစ်ခုရဲ့ Isolation နဲ့ Security ဟာ ဒီအရာတွေကို ဘယ်လိုပေါင်းစပ် Configuration လုပ်ထားသလဲဆိုတာပေါ် မူတည်ပါတယ်။
 
 ```mermaid
 flowchart TB
-    R[Container runtime or manager]
-    R --> N["Namespaces — resource views"]
-    R --> C["cgroups — resource control"]
-    R --> P["Capabilities — fine-grained privilege controls"]
-    R --> F["Filesystem and mount setup"]
-    R --> S["Seccomp and LSM policy, when configured"]
-    N --> W[Container workload process tree]
-    C --> W
-    P --> W
-    F --> W
-    S --> W
-    K[Linux kernel] -->|schedules and enforces| W
+  APP["Container ထဲက Application Process"]
+  APP --> NS["Namespaces<br/>ဘယ် Resource တွေကို မြင်ရမလဲ"]
+  APP --> CG["cgroups<br/>Resource ဘယ်လောက်သုံးနိုင်မလဲ"]
+  APP --> FS["Mount / rootfs<br/>ဘယ် Files တွေကို မြင်၊ ပြင်နိုင်မလဲ"]
+  APP --> CAP["Capabilities<br/>ဘယ် Privilege တွေ ရှိမလဲ"]
+  APP --> SC["Seccomp<br/>ဘယ် System Call တွေ ခေါ်နိုင်မလဲ"]
+  APP --> LSM["LSM<br/>ဘယ် Security Policy ကို လိုက်နာရမလဲ"]
 ```
 
-ပုံမှာ runtime က kernel mechanism များကို စီစဉ်ပေးပြီး kernel က workload process tree ကို စီမံနေတဲ့ ဆက်နွယ်မှုကို ပြထားပါတယ်။ Container တစ်ခုစီမှာ ဒီ control အားလုံးကို တူညီတဲ့ပုံစံနဲ့ အသုံးပြုထားတယ်လို့တော့ မဆိုလိုပါဘူး။
+### 7.1 Namespaces — Application တွေ မြင်ရတဲ့ပတ်ဝန်းကျင်ကို ခွဲခြားခြင်း
 
-### 7.1 Namespaces — Process မြင်ရတဲ့ resource ကို ခွဲခြားခြင်း
+Namespace ဆိုတာ Linux Process တွေကို System Resource အချို့အတွက် ကိုယ်ပိုင်ပတ်ဝန်းကျင် ရှိသလို မြင်တွေ့စေတဲ့ နည်းပညာဖြစ်ပါတယ်။ Namespace တစ်ခုအတွင်းက Process တွေ မြင်ရတဲ့ Resource ပြောင်းလဲမှုဟာ အခြား Namespace ထဲက Process တွေကို ပုံမှန်အားဖြင့် တိုက်ရိုက်မမြင်စေပါဘူး။ [9]
 
-Linux namespace တစ်ခုက system resource တစ်မျိုးကို namespace အတွင်းရှိ process များအတွက် သီးခြား instance ရှိသလို မြင်စေပါတယ်။ Namespace တူညီတဲ့ process များက အဲဒီ resource view ကို မျှဝေကြပေမဲ့ အခြား namespace ထဲက process များက တူညီတဲ့ view ကို အလိုအလျောက် မရကြပါဘူး။ Linux manual မှာ namespace အမျိုးအစားနဲ့ သက်ဆိုင်ရာ API တွေကို သီးခြားဖော်ပြထားပါတယ်။ [^2]
+Linux မှာ အဓိက Namespace အမျိုးအစား ရှစ်မျိုး ရှိပါတယ်။ [9]
 
-| Namespace | ခွဲခြားပေးတဲ့ resource view |
+| Namespace | ဘာကို ခွဲခြားပေးသလဲ |
 |---|---|
-| PID | Process ID နဲ့ process visibility |
-| Mount | Process မြင်ရတဲ့ mount table နဲ့ mount point များ |
-| Network | Network interface၊ routing နဲ့ network-related resource များ |
-| UTS | Hostname နဲ့ NIS domain name |
-| IPC | System V IPC နဲ့ POSIX message queue ကဲ့သို့ IPC resource များ |
-| User | UID/GID mapping နဲ့ user privilege context |
-| Cgroup | Process မြင်ရတဲ့ cgroup hierarchy view |
-| Time | Clock view အချို့ကို namespace အလိုက် ချိန်ညှိခြင်း |
+| PID | Process ID နဲ့ Process တွေ မြင်ရပုံ |
+| Mount | Mount Point တွေ မြင်ရပုံ |
+| Network | Network Device၊ Protocol Stack၊ Port စသည် |
+| UTS | Hostname နဲ့ NIS Domain Name |
+| IPC | System V IPC နဲ့ POSIX Message Queue |
+| User | User ID နဲ့ Group ID Mapping |
+| Cgroup | Cgroup Root Directory ကို မြင်ရပုံ |
+| Time | Boot နဲ့ Monotonic Clock အချို့ရဲ့ Offset |
 
-Time namespace က clock အချို့ရဲ့ view ကို namespace အလိုက် ချိန်ညှိပေးနိုင်ပါတယ်။ ဘယ် clock တွေကို ဘယ်လိုပြောင်းလဲနိုင်သလဲဆိုတဲ့ အသေးစိတ်ကို Chapter 03 မှာ ဆက်လေ့လာပါမယ်။ [^5]
+ဥပမာ PID Namespace အသစ်တစ်ခုထဲက Process တွေဟာ အဲဒီ Namespace အတွင်းက Process ID တွေကိုပဲ ပုံမှန်မြင်ရပါတယ်။ Network Namespace ကတော့ Network Device၊ Routing Table နဲ့ Port တို့အတွက် သီးခြား Network View တစ်ခု ဖန်တီးပေးနိုင်ပါတယ်။ [9]
 
-ဒီနေရာမှာ Namespace နဲ့ cgroup တို့ရဲ့ တာဝန်ကို မရောထွေးဖို့ အရေးကြီးပါတယ်။ Namespace က process တစ်ခု မြင်ရတဲ့ resource view ကို ခွဲခြားပေးတာဖြစ်ပြီး resource usage ကို limit လုပ်ပေးတာ မဟုတ်ပါဘူး။ Namespace အမျိုးအစား ရှစ်မျိုးရှိတယ်ဆိုတာနဲ့ container တစ်ခုစီမှာ ရှစ်မျိုးလုံးကို မဖြစ်မနေ သီးခြားဖန်တီးထားတယ်လို့လည်း မဆိုလိုပါဘူး။
+Namespace က Resource ပမာဏကို ကန့်သတ်ပေးတာ မဟုတ်ပါဘူး။ PID Namespace ရှိတာနဲ့ CPU အသုံးပြုမှုကို အလိုအလျောက် Limit လုပ်ထားတယ်လို့ မဆိုနိုင်ပါဘူး။ အဲဒီအလုပ်အတွက် cgroups ကို သုံးပါတယ်။
 
-### 7.2 cgroups — Resource အသုံးပြုမှုကို စီမံခြင်း
+Namespace ရှစ်မျိုးရှိတာကြောင့် Container တစ်ခုစီမှာ ရှစ်မျိုးလုံးကို မဖြစ်မနေ သီးခြားဖန်တီးထားရမယ်လို့လည်း မဆိုလိုပါဘူး။ Runtime Configuration အလိုက် Namespace တချို့ကို မျှဝေထားနိုင်ပါတယ်။
 
-Control groups (`cgroups`) က process တွေကို hierarchical group အဖြစ် စုစည်းပြီး CPU၊ memory နဲ့ အခြား resource တွေရဲ့ အသုံးပြုမှုကို စောင့်ကြည့်ခြင်း၊ စာရင်းသွင်းခြင်းနဲ့ ကန့်သတ်ခြင်းတို့ကို လုပ်နိုင်စေပါတယ်။ Linux manual မှာ cgroup ကို process အုပ်စုတွေရဲ့ resource usage ကို limit လုပ်ပြီး monitor လုပ်နိုင်တဲ့ kernel feature အဖြစ် ရှင်းပြထားပါတယ်။ [^3]
+### 7.2 cgroups — CPU နဲ့ Memory အသုံးပြုမှုကို စီမံခြင်း
 
-ဥပမာ memory controller နဲ့ သတ်မှတ်ထားတဲ့ cgroup တစ်ခုအတွင်းရှိ process တွေရဲ့ memory usage ကို စောင့်ကြည့်ပြီး limit သတ်မှတ်နိုင်ပါတယ်။ ဒါဟာ application ရဲ့ memory leak ကို ပြုပြင်ပေးတာ မဟုတ်သလို host ပေါ်မှာ resource များနေတယ်ဆိုတာကိုလည်း အာမမခံပါဘူး။
+Namespace က Process တွေ မြင်ရတဲ့ပတ်ဝန်းကျင်ကို ခွဲပေးတယ်ဆိုတာ သိခဲ့ပါပြီ။ ဒါပေမဲ့ Container တစ်ခုက CPU၊ Memory ဒါမှမဟုတ် I/O ကို အလွန်အကျွံ အသုံးပြုလာရင် ဘယ်လိုထိန်းချုပ်မလဲဆိုတာလည်း စဉ်းစားဖို့ လိုပါတယ်။
 
-### 7.3 Capabilities — Root privilege ကို ခွဲခြားစီမံခြင်း
+ဒီအတွက် Linux မှာ Control Groups (cgroups) ကို အသုံးပြုပါတယ်။ cgroups က Process တွေကို အုပ်စုဖွဲ့ပြီး Resource အသုံးပြုမှုကို စောင့်ကြည့်၊ စာရင်းသွင်းနဲ့ သတ်မှတ်ချက်အတိုင်း ကန့်သတ်နိုင်တဲ့ Kernel Feature ဖြစ်ပါတယ်။ [10]
 
-Unix စနစ်တွေမှာ UID 0 (`root`) ဟာ ကျယ်ပြန့်တဲ့ administrative permission တွေနဲ့ ဆက်စပ်နေပါတယ်။ Linux capabilities က အဲဒီ privilege တွေကို ပိုမိုသေးငယ်တဲ့ permission unit တွေအဖြစ် ခွဲထားနိုင်စေပါတယ်။ ဥပမာ network configuration ပြောင်းဖို့ လိုအပ်တဲ့ process ကို အခြားမလိုအပ်တဲ့ administrative permission အားလုံး ပေးထားစရာ မလိုအောင် စီမံနိုင်ပါတယ်။
+ဥပမာ Service သုံးခုအတွက် Memory Limit မတူညီစွာ သတ်မှတ်ထားနိုင်ပါတယ်။ ဒါပေမဲ့ cgroups ဟာ Application တစ်ခုရဲ့ Memory Leak ကို ပြုပြင်ပေးတာ မဟုတ်ပါဘူး။ အသုံးပြုမှုကို ထိန်းချုပ်ပေးတာသာ ဖြစ်ပါတယ်။
 
-ဒီအခန်းမှာတော့ root privilege ကို permission အပိုင်းငယ်တွေ ခွဲပြီး စီမံနိုင်တယ်ဆိုတဲ့ အခြေခံအယူအဆကိုပဲ မှတ်ထားပါ။ Capability တွေကို thread အလိုက် ဘယ်လိုသတ်မှတ်သလဲ၊ effective/permitted/inheritable set တွေ ဘယ်လိုဆက်နွယ်သလဲဆိုတာကို Chapter 05 မှာ အသေးစိတ် ကြည့်ပါမယ်။ [^4]
+မှတ်ထားရမယ့် ကွာခြားချက်က ရိုးရှင်းပါတယ် — **Namespace က ဘာကို မြင်ရမလဲဆိုတာ ခွဲပေးပြီး cgroups က Resource ဘယ်လောက်သုံးနိုင်မလဲဆိုတာ စီမံပေးပါတယ်။**
 
-Container အတွင်း UID 0 ဖြစ်နေတယ်ဆိုတာနဲ့ host ပေါ်မှာ unrestricted root ဖြစ်နေတယ်လို့ အလိုအလျောက် မဆိုနိုင်ပါဘူး။ User namespace mapping၊ capability set၊ runtime configuration နဲ့ security policy တို့က အဲဒီအခန်းကဏ္ဍမှာ ပါဝင်ပါတယ်။ တစ်ဖက်မှာလည်း “container ထဲက root က host ကို မထိခိုက်နိုင်ဘူး” လို့ အာမခံလို့ မရပါဘူး။ Privileged container သို့မဟုတ် ကျယ်ပြန့်တဲ့ capability တွေ ပေးထားရင် host အတွက် အန္တရာယ်ရှိနိုင်ပါတယ်။
+### 7.3 Capabilities — Root ခွင့်ပြုချက်ကို အပိုင်းလိုက် ခွဲခြားခြင်း
 
-### 7.4 Filesystem isolation
+Linux မှာ Root User နဲ့ ဆက်စပ်တဲ့ Privilege တွေကို အရင်တုန်းက အုပ်စုကြီးတစ်ခုလို စဉ်းစားခဲ့ကြပါတယ်။ Linux Capabilities ကတော့ အဲဒီ Privilege တွေကို ပိုမိုအသေးစိတ်တဲ့ အခွင့်အာဏာတွေအဖြစ် ခွဲပေးနိုင်ပါတယ်။ [11]
 
-Container process တစ်ခုအတွက် host ရဲ့ `/` ကို တိုက်ရိုက်မသုံးဘဲ သီးခြား root filesystem (rootfs) တစ်ခု ပြင်ဆင်ပေးနိုင်ပါတယ်။ Runtime က image ကနေ ရလာတဲ့ filesystem content တွေကို ပြင်ဆင်ပြီး mount point တွေ၊ read-only/read-write setting တွေနဲ့ process မြင်ရမယ့် filesystem view ကို သတ်မှတ်ပေးပါတယ်။
+ဥပမာ Network Interface၊ Routing နဲ့ အခြား Network Administration လုပ်ဆောင်ချက်တွေ လိုအပ်တဲ့ Process တစ်ခုကို `CAP_NET_ADMIN` ပေးနိုင်ပါတယ်။ ဒီအတွက် Root ရဲ့ အခြား Privilege အားလုံးကိုပါ ပေးဖို့ မလိုအပ်ပါဘူး။ [11]
 
-ဒီအလုပ်ကို `chroot()` တစ်ခုတည်းနဲ့ မပြီးပါဘူး။ Mount namespace၊ rootfs၊ bind mount၊ device visibility နဲ့ permission တွေကို ဘယ်လိုပြင်ဆင်ထားသလဲဆိုတာလည်း အရေးကြီးပါတယ်။
+Container အတွင်းက User ကို `root` လို့ မြင်ရတာနဲ့ Host System ပေါ်မှာ Root Permission အပြည့်ရနေတယ်လို့ မယူဆသင့်ပါဘူး။ User Namespace Mapping နဲ့ Capability Set တွေပေါ်မူတည်ပြီး အခွင့်အာဏာ ကွာခြားနိုင်ပါတယ်။ ဒါပေမဲ့ Privileged Container သို့မဟုတ် Capability အလွန်များစွာ ပေးထားတဲ့ Container ဟာ Host အတွက် အန္တရာယ်ရှိနိုင်တာကိုလည်း သတိထားပါ။
+
+### 7.4 Filesystem Isolation — Container ရဲ့ File System ကို သီးခြားခွဲခြားခြင်း
+
+Container တစ်ခုစီကို ကိုယ်ပိုင် Filesystem ရှိသလို အသုံးပြုနိုင်အောင် ပြင်ဆင်ပေးနိုင်ပါတယ်။ ဒီအတွက် Image ထဲက File တွေကို အခြေခံပြီး Root Filesystem (`rootfs`) တစ်ခုစီ ဖန်တီးနိုင်ပါတယ်။
+
+Mount Namespace က Process တွေ မြင်ရတဲ့ Mount Point List ကို ခွဲပေးပါတယ်။ Runtime က Root Filesystem ကို ပြင်ဆင်ပြီးနောက် ဘယ် Mount တွေကို Read-only ထားမလဲ၊ ဘယ် Directory တွေကို Bind Mount အဖြစ် မျှဝေမလဲ၊ ဘယ် Permission တွေ ပေးမလဲဆိုတာ သတ်မှတ်နိုင်ပါတယ်။ [9]
+
+ဒါကြောင့် Container တစ်ခုစီမှာ သီးခြား Root Filesystem View ရှိနိုင်ပေမဲ့ **Host သို့မဟုတ် အခြား Container နဲ့ File လုံးဝ မမျှဝေဘူး** လို့ မဆိုလိုပါဘူး။ Bind Mount၊ Shared Volume နဲ့ အခြား Mount Configuration တွေကြောင့် Directory အချို့ကို ရည်ရွယ်ချက်ရှိရှိ မျှဝေနိုင်ပါတယ်။
+
+ဒီအလုပ်ကို `chroot()` တစ်ခုတည်းနဲ့ ပြီးမြောက်အောင် လုပ်လို့မရပါဘူး။ Mount၊ Namespace နဲ့ Permission Setting တွေကိုပါ ပေါင်းစပ်စဉ်းစားဖို့ လိုပါတယ်။
 
 ### 7.5 Seccomp နဲ့ Linux Security Modules
 
-Namespaces၊ cgroups နဲ့ capabilities တွေအပြင် seccomp နဲ့ Linux Security Modules (LSM) တွေကိုလည်း container security မှာ အသုံးပြုနိုင်ပါတယ်။ Seccomp filter က thread တစ်ခုက ခေါ်ဆိုမယ့် system call တွေကို စစ်ဆေးပြီး ခွင့်ပြုမယ့် call နဲ့ ပိတ်ပင်မယ့် call တို့ကို သတ်မှတ်နိုင်ပါတယ်။ ဒါပေမဲ့ seccomp တစ်ခုတည်းကို complete sandbox လို့ မယူဆသင့်ကြောင်း Linux kernel documentation က ရှင်းလင်းထားပါတယ်။ [^18]
+Namespace၊ cgroups၊ Capabilities နဲ့ Filesystem Isolation တို့အပြင် System Call နဲ့ Security Policy ပိုင်းကိုလည်း ထိန်းချုပ်နိုင်ပါတယ်။
 
-LSM framework က kernel ရဲ့ access-control check တွေမှာ security policy ချိတ်ဆက်အသုံးပြုနိုင်စေပါတယ်။ SELinux နဲ့ AppArmor တို့ဟာ LSM ကို အသုံးပြုတဲ့ ဥပမာတွေ ဖြစ်ပါတယ်။ သို့သော် distribution တိုင်းမှာ တူညီတဲ့ LSM နဲ့ policy ကို အမြဲဖွင့်ထားတယ်လို့ မယူဆရပါဘူး။ Kernel configuration၊ boot parameter နဲ့ system policy အလိုက် ကွာခြားနိုင်ပါတယ်။ [^19]
+**Seccomp** က Process တစ်ခု Linux Kernel ဆီ ခေါ်ယူတဲ့ System Call တွေကို Filter လုပ်နိုင်စေပါတယ်။ မလိုအပ်တဲ့ System Call အချို့ကို ပိတ်ထားခြင်းအားဖြင့် Application က ထိတွေ့နိုင်တဲ့ Kernel Interface အရေအတွက်ကို လျှော့ချနိုင်ပါတယ်။ [12]
 
-ဒီ mechanism တွေရဲ့ configuration အသေးစိတ်ကို သက်ဆိုင်ရာနောက်ပိုင်း chapter တွေမှာ ဆက်လက်လေ့လာပါမယ်။ လက်ရှိအဆင့်မှာ မှတ်ထားရမှာက container isolation ဟာ namespace တစ်ခုတည်း၊ cgroup တစ်ခုတည်း ဒါမှမဟုတ် seccomp တစ်ခုတည်းနဲ့ ပြီးဆုံးတာ မဟုတ်ဘဲ လိုအပ်တဲ့ control အလွှာတွေကို ပေါင်းစပ်အသုံးပြုရခြင်း ဖြစ်ပါတယ်။
+**Linux Security Modules (LSM)** ကတော့ Kernel Security Check တွေမှာ အပို Policy တွေ ထည့်သွင်းအသုံးပြုနိုင်စေတဲ့ Framework ဖြစ်ပါတယ်။ SELinux နဲ့ AppArmor တို့ဟာ LSM Interface ကို အသုံးပြုတဲ့ Security System ဥပမာတွေ ဖြစ်ပါတယ်။ [13]
 
-## 8. Image၊ Container၊ Runtime နဲ့ Engine ကို ခွဲကြည့်ခြင်း
+Seccomp တစ်ခုတည်း၊ LSM တစ်ခုတည်း ဒါမှမဟုတ် Namespace တစ်ခုတည်းက Security အပြည့်အဝ ပေးနိုင်တာ မဟုတ်ပါဘူး။ Container တစ်ခုရဲ့ လုံခြုံရေးဟာ Permission၊ Filesystem၊ Kernel Interface နဲ့ Runtime Configuration တွေကို သင့်တော်သလို ပေါင်းစပ်ထားခြင်းအပေါ် မူတည်ပါတယ်။
 
-ဒီစကားလုံးလေးခုဟာ container workflow တစ်ခုအတွင်း ဆက်စပ်နေကြပေမဲ့ အဓိပ္ပာယ်နဲ့ တာဝန် မတူကြပါဘူး။ တစ်ခုချင်းစီရဲ့ တာဝန်ကို ခွဲသိထားရင် နောက်ပိုင်း runtime နဲ့ engine architecture တွေကို ဖတ်တဲ့အခါ component တစ်ခုစီ ဘာလုပ်သလဲဆိုတာ ပိုလွယ်ကူစွာ လိုက်နိုင်ပါလိမ့်မယ်။
+## 8. Image၊ Container၊ Runtime နဲ့ Engine ကို ခွဲခြားနားလည်ခြင်း
 
-### 8.1 Container image
+Container နည်းပညာကို စတင်လေ့လာတဲ့အခါ မကြာခဏ တွေ့ရတဲ့ စကားလုံးလေးခုက Image၊ Container၊ Runtime နဲ့ Engine တို့ဖြစ်ပါတယ်။
 
-Container image ဆိုတာ application ရဲ့ filesystem content ကို layer တွေအဖြစ် ဖွဲ့စည်းထားပြီး ထို image အတွက် default execution setting တွေကို metadata အဖြစ် တွဲထားတဲ့ artifact ဖြစ်ပါတယ်။ OCI Image Specification မှာ layer တစ်ခုစီက filesystem changes ကို ကိုယ်စားပြုကြောင်း၊ image configuration ထဲမှာ `Env`၊ `Entrypoint`၊ `Cmd`၊ `User` နဲ့ `WorkingDir` စတဲ့ default value တွေ ပါဝင်နိုင်ကြောင်း သတ်မှတ်ထားပါတယ်။ [^7]
+ဒီစကားလုံးတွေဟာ တစ်ခုနဲ့တစ်ခု ဆက်စပ်နေပေမဲ့ တာဝန်နဲ့ အဓိပ္ပာယ် မတူကြပါဘူး။
 
-ဒီ default setting တွေဟာ container တစ်ခု ဖန်တီးတဲ့အခါ အသုံးပြုမယ့် အခြေခံတန်ဖိုးတွေ ဖြစ်ပါတယ်။ Container တစ်ခုချင်းစီရဲ့ configuration နဲ့ ပေါင်းစပ်သတ်မှတ်နိုင်သလို အချို့တန်ဖိုးတွေကို override လုပ်နိုင်ပါတယ်။ Image ထဲမှာ per-container mount၊ namespace နဲ့ cgroup setup အားလုံး ပါပြီးသားလို့ မယူဆရပါဘူး။ Image configuration (`config` object) ကို OCI runtime bundle ထဲက `config.json` နဲ့လည်း မရောထွေးသင့်ပါဘူး။ ပထမတစ်ခုက image ရဲ့ default metadata ဖြစ်ပြီး ဒုတိယတစ်ခုက particular container instance အတွက် runtime setting တွေကို ဖော်ပြတာ ဖြစ်ပါတယ်။
+ဒီကွာခြားချက်ကို နားလည်ထားရင် Docker နဲ့ အခြား Container Tool တွေရဲ့ အတွင်းပိုင်းအလုပ်လုပ်ပုံကို လေ့လာတဲ့အခါ ပိုမိုလွယ်ကူလာပါလိမ့်မယ်။
 
-### 8.2 Container
+### 8.1 Container Image ဆိုတာဘာလဲ။
 
-Container ဆိုတာ image ဖိုင်ကိုပဲ ခေါ်တာ မဟုတ်ပါဘူး။ Image content ကို အသုံးပြုပြီး particular instance တစ်ခုအတွက် runtime configuration နဲ့ တွဲဖက်ပြင်ဆင်ထားတဲ့ execution environment နဲ့ ၎င်းရဲ့ lifecycle state ကို ရည်ညွှန်းပါတယ်။ Runtime က `create` လုပ်ပြီးချိန်မှာ application process မစရသေးတဲ့ `created` state ဖြစ်နေနိုင်သလို `start` ပြီးနောက် `running` ဖြစ်နေနိုင်ပါတယ်။
+Container Image ဆိုတာ Application တစ်ခုကို Run လုပ်ဖို့ လိုအပ်တဲ့ File တွေ၊ Library တွေနဲ့ အခြေခံ Configuration တွေကို စုစည်းထားတဲ့ Package တစ်ခု ဖြစ်ပါတယ်။
 
-### 8.3 Container runtime
+ဒါပေမဲ့ Image ဟာ File တွေကို အစုလိုက်အပြုံလိုက် သိမ်းထားတာမျိုးသာ မဟုတ်ပါဘူး။ အတွင်းမှာ Filesystem Layer တွေ ရှိပြီး Application အတွက် Default Setting တွေကိုလည်း Metadata အနေနဲ့ သိမ်းဆည်းထားပါတယ်။
 
-Container runtime က particular container instance တစ်ခုအတွက် filesystem bundle နဲ့ runtime configuration ကို အသုံးပြုပြီး environment ကို ဖန်တီး၊ process ကို စတင်၊ ရပ်တန့်နဲ့ ဖယ်ရှားပေးတဲ့ software ဖြစ်ပါတယ်။ OCI Runtime Specification က runtime လက်ခံရမယ့် configuration၊ execution environment နဲ့ lifecycle operation တွေရဲ့ behavior ကို သတ်မှတ်ထားပါတယ်။ [^9]
+ဥပမာ Image တစ်ခုမှာ Python Runtime၊ Application Code၊ လိုအပ်တဲ့ Library နဲ့ Configuration တွေ ပါဝင်နိုင်ပါတယ်။
 
-### 8.4 Container engine သို့မဟုတ် manager
+ဒါ့အပြင် Container စတင်တဲ့အခါ ဘယ် Command ကို အသုံးပြုမလဲ၊ ဘယ် User နဲ့ Run လုပ်မလဲ၊ ဘယ် Directory မှာ စတင်အလုပ်လုပ်မလဲဆိုတဲ့ Default Setting တွေကိုလည်း ထည့်သွင်းသတ်မှတ်ထားနိုင်ပါတယ်။
 
-“Container engine” ဆိုတဲ့စကားလုံးဟာ OCI specification က သတ်မှတ်ထားတဲ့ component အမည် မဟုတ်ပါဘူး။ Product တစ်ခုနဲ့တစ်ခုအလိုက် image management၊ API၊ CLI၊ storage၊ networking နဲ့ runtime ကို ချိတ်ဆက်စီမံပေးတဲ့ တာဝန်တွေ ကွာခြားနိုင်ပါတယ်။
+ဥပမာ `Entrypoint`၊ `Cmd`၊ `User`၊ `WorkingDir` နဲ့ `Env` စတဲ့ Configuration တွေဟာ Image ထဲမှာ ပါဝင်နိုင်ပါတယ်။
 
-ဥပမာ Docker Engine မှာ `docker` CLI က API ကတစ်ဆင့် `dockerd` daemon ကို ဆက်သွယ်ပြီး daemon က image၊ container၊ network နဲ့ volume တွေကို စီမံပါတယ်။ [^10] အခြား project တွေမှာတော့ daemon မပါဘဲ local CLI ကနေ တိုက်ရိုက်စီမံနိုင်တဲ့ model လည်း ရှိပါတယ်။ Podman ရဲ့ architecture ကို Chapter 17 မှာ သီးခြားလေ့လာပါမယ်။
+Image တစ်ခုကို အသုံးပြုပြီး Container အများအပြား ဖန်တီးနိုင်ပါတယ်။ Container တစ်ခုစီရဲ့ လုပ်ဆောင်မှုအလိုက် Configuration တချို့ကိုလည်း ထပ်မံပြောင်းလဲသတ်မှတ်နိုင်ပါတယ်။
 
-| အမည် | အဓိကတာဝန် |
-|---|---|
-| Image | Filesystem layers နဲ့ application အတွက် default configuration ကို သယ်ဆောင်ထားတယ် |
-| Container | Image နဲ့ runtime configuration ကို အခြေခံထားတဲ့ instance/state ဖြစ်တယ် |
-| Runtime | Container environment ကို ဖန်တီးပြီး process lifecycle ကို ကိုင်တွယ်တယ် |
-| Engine/manager | Image နဲ့ container တွေကို user-facing tool/API ကနေ စီမံပြီး အခြား component တွေကို ချိတ်ဆက်ပေးတယ် |
+သို့သော် Image ထဲမှာ Container တစ်ခုချင်းစီအတွက် လိုအပ်တဲ့ Network၊ Mount နဲ့ cgroups Setting အားလုံး ပါဝင်နေတယ်လို့ မယူဆသင့်ပါဘူး။ အဲဒီအရာတွေကို Container စတင်ဖန်တီးတဲ့အချိန်မှာ သီးခြားပြင်ဆင်ရပါတယ်။
 
-ဒီဇယားက concept ကို နားလည်စေဖို့ အကျဉ်းချုပ်ထားတာပါ။ Product တစ်ခုချင်းစီရဲ့ component boundary ကိုတော့ နောက်ပိုင်း chapter တွေမှာ သူတို့ရဲ့ official architecture အတိုင်း ရှင်းပြပါမယ်။
+ဒီနေရာမှာ Image Configuration နဲ့ OCI Runtime Configuration ကိုလည်း မရောထွေးသင့်ပါဘူး။
 
-### 8.5 Docker Engine ရဲ့ execution architecture
+Image Configuration က Image ရဲ့ Default Setting တွေကို ဖော်ပြပေးတာဖြစ်ပြီး Runtime Bundle ထဲက `config.json` ကတော့ Container တစ်ခုချင်းစီအတွက် လိုအပ်တဲ့ Runtime Setting တွေကို ဖော်ပြပေးတာဖြစ်ပါတယ်။
 
-Docker ကို ဥပမာအနေနဲ့ ကြည့်မယ်ဆိုရင် `docker run` ဆိုတဲ့ command တစ်ခုနောက်မှာ component အများအပြား အလုပ်လုပ်နေပါတယ်။ အောက်ကပုံက Linux ပေါ်က Docker Engine ရဲ့ ရိုးရှင်းထားတဲ့ architecture ဖြစ်ပြီး Docker က ပုံမှန်အသုံးပြုတဲ့ `containerd` နဲ့ `runc` path ကို အခြေခံထားပါတယ်။ Docker က alternative runtime တွေကိုလည်း ရွေးချယ်နိုင်တာကြောင့် ဒီပုံကို container engine အားလုံးရဲ့ universal architecture လို့ မယူဆပါနဲ့။ [^10][^24]
+### 8.2 Container ဆိုတာဘာလဲ။
+
+Image နဲ့ Container ဟာ အဓိပ္ပာယ်တူတာ မဟုတ်ပါဘူး။
+
+Image ဆိုတာ Container တစ်ခု ဖန်တီးဖို့ အသုံးပြုတဲ့ Package ဖြစ်ပြီး Container ဆိုတာ အဲဒီ Image ကို အခြေခံပြီး အမှန်တကယ် ပြင်ဆင်ဖန်တီးထားတဲ့ Instance ဖြစ်ပါတယ်။
+
+ဥပမာ Nginx Image တစ်ခု ရှိတယ်ဆိုပါစို့။ အဲဒီ Image ကို အသုံးပြုပြီး Container A နဲ့ Container B ဆိုပြီး နှစ်ခု ဖန်တီးနိုင်ပါတယ်။
+
+Container A နဲ့ Container B ဟာ Image တစ်ခုတည်းကို အသုံးပြုထားပေမဲ့ ကိုယ်ပိုင် Configuration နဲ့ လုပ်ဆောင်မှုအခြေအနေတွေ ရှိနိုင်ပါတယ်။
+
+Container တစ်ခု ဖန်တီးပြီးသော်လည်း အတွင်းက Application ကို မစရသေးတဲ့ အခြေအနေ ရှိနိုင်ပါတယ်။ ဒီလိုအခြေအနေကို `created` State လို့ ခေါ်ပါတယ်။
+
+Application ကို စတင် Run လုပ်လိုက်တဲ့အခါတော့ `running` State ဖြစ်လာပါတယ်။
+
+ဒါကြောင့် Container ဆိုတာ Image File ကိုသာ ခေါ်တာမဟုတ်ဘဲ အဲဒီ Image ကို အသုံးပြုပြီး ဖန်တီးထားတဲ့ Application ပတ်ဝန်းကျင်နဲ့ လက်ရှိအလုပ်လုပ်နေတဲ့ အခြေအနေတို့ကိုပါ ရည်ညွှန်းပါတယ်။
+
+### 8.3 Container Runtime ဆိုတာဘာလဲ။
+
+Container နယ်ပယ်မှာ `Runtime` ဆိုတဲ့ စကားလုံးကို အဆင့်မတူတဲ့ Software နှစ်မျိုးအတွက် အသုံးပြုတတ်ကြပါတယ်။ ဒါကြောင့် ဘယ် Runtime အမျိုးအစားကို ပြောနေတာလဲဆိုတာ ခွဲကြည့်ဖို့ လိုပါတယ်။
+
+**Low-level OCI Runtime** ကတော့ OCI Runtime Bundle ထဲက `config.json` ကို အခြေခံပြီး Container Environment ကို ဖန်တီး၊ စတင်၊ Signal ပို့၊ ဖယ်ရှားပေးတဲ့ အလုပ်ကို လုပ်ပါတယ်။ `runc` နဲ့ `crun` တို့ဟာ ဒီအမျိုးအစားရဲ့ ဥပမာတွေ ဖြစ်ပါတယ်။ [14]
+
+ဒီ Runtime တွေက Namespace၊ Mount၊ cgroups၊ Capability နဲ့ Process Setting တွေကို ပြင်ဆင်ပြီး Container ရဲ့ User Process ကို စတင်ပေးပါတယ်။ ဒါပေမဲ့ Image Registry ကနေ Image ရယူခြင်း၊ Image Layer တွေကို Storage ပေါ်မှာ ပြင်ဆင်ခြင်းနဲ့ Container အများအပြားကို အဆင့်မြင့်စီမံခန့်ခွဲခြင်းတို့အားလုံးကို Low-level Runtime တစ်ခုတည်းက လုပ်ပေးတာ မဟုတ်ပါဘူး။
+
+**Higher-level Container Manager / Runtime** ကတော့ Image Content၊ Snapshot၊ Container Task နဲ့ Shim တို့ကို စီမံပြီး လိုအပ်တဲ့အချိန်မှာ Low-level Runtime ကို ခေါ်သုံးပေးပါတယ်။ `containerd` ဟာ ဒီလို Higher-level Management အခန်းကဏ္ဍကို ယူထားတဲ့ ဥပမာတစ်ခု ဖြစ်ပါတယ်။ [18]
+
+ဒါကြောင့် `runc` ကို Container Process စတင်ပေးတဲ့ Low-level Runtime လို့၊ `containerd` ကို Container Lifecycle နဲ့ အောက်ခံ Component တွေကို ပေါင်းစပ်စီမံပေးတဲ့ Higher-level Manager လို့ ခွဲမှတ်ထားရင် ပိုရှင်းပါတယ်။
+
+### 8.4 Container Engine သို့မဟုတ် Manager ဆိုတာဘာလဲ။
+
+Container Engine ဆိုတာ Container တွေကို အသုံးပြုသူအနေနဲ့ လွယ်ကူစွာ ဖန်တီး၊ စတင်၊ ရပ်တန့်ပြီး စီမံနိုင်အောင် ကူညီပေးတဲ့ အဆင့်မြင့် Software ဖြစ်ပါတယ်။ Image၊ Network၊ Volume နဲ့ Container Lifecycle တို့ကို စီမံပေးနိုင်ပြီး လိုအပ်တဲ့အခါ အောက်ခံ Runtime သို့မဟုတ် Manager တွေကို ခေါ်သုံးပါတယ်။
+
+ဒါပေမဲ့ Container Engine ဆိုတဲ့ စကားလုံးဟာ OCI က သတ်မှတ်ထားတဲ့ Standard Component အမည်တစ်ခု မဟုတ်ပါဘူး။ Software တစ်ခုနဲ့တစ်ခုအလိုက် Architecture နဲ့ တာဝန်ယူပုံ ကွာခြားနိုင်ပါတယ်။
+
+ဥပမာ Docker Engine မှာ Docker CLI၊ API နဲ့ `dockerd` ဆိုတဲ့ Daemon တို့ကို အသုံးပြုပြီး Image၊ Container၊ Network နဲ့ Volume တွေကို စီမံနိုင်ပါတယ်။
+
+အခြားတစ်ဖက်မှာ Podman ကတော့ Docker နဲ့ မတူညီတဲ့ Architecture ကို အသုံးပြုပါတယ်။ Podman ဟာ ပုံမှန်အားဖြင့် Daemon တစ်ခုကို အမြဲတမ်း Run ထားစရာမလိုဘဲ CLI ကနေ Container တွေကို စီမံနိုင်ပါတယ်။
+
+ဒီအကြောင်းကို စာအုပ်ရဲ့ နောက်ပိုင်း Chapter တွေမှာ ဆက်လက်လေ့လာသွားပါမယ်။
+
+အခုအဆင့်မှာ Image က Application အတွက် လိုအပ်တဲ့ Package ဖြစ်တယ်၊ Container က အဲဒီ Package ကို အသုံးပြုပြီး ဖန်တီးထားတဲ့ Instance ဖြစ်တယ်၊ Runtime က အမှန်တကယ် Run လုပ်စေတယ်၊ Engine ကတော့ အဲဒီအရာတွေကို အသုံးပြုသူအနေနဲ့ လွယ်ကူစွာ စီမံနိုင်အောင် ချိတ်ဆက်ပေးတယ်ဆိုတာကို မှတ်ထားရင် လုံလောက်ပါတယ်။
+
+### 8.5 Docker Engine ရဲ့ အလုပ်လုပ်ပုံ
+
+Docker ကို အသုံးပြုဖူးသူတစ်ယောက်အနေနဲ့ `docker run` ဆိုတဲ့ Command ကို သိပြီးဖြစ်နိုင်ပါတယ်။ ဒီ Command တစ်ခု ရိုက်လိုက်တဲ့အခါ နောက်ကွယ်မှာ အလုပ်လုပ်နေတဲ့ Component တွေရဲ့ ဆက်နွယ်ပုံကို အောက်က Diagram မှာ ကြည့်နိုင်ပါတယ်။
 
 ```mermaid
 flowchart TB
-    CLI[Docker CLI: docker run]
-    API[Docker Engine API]
-    D[ dockerd ]
-    C[ containerd ]
-    S[ containerd-shim-runc-v2 ]
-    R[ runc: OCI runtime engine ]
-    K[Linux kernel: namespaces, cgroups, credentials, security]
-    W[Container workload process: PID 1 in its PID namespace, when configured]
-
-    CLI -->|REST API request| API
-    API --> D
-    D -->|container lifecycle request| C
-    C -->|starts or contacts shim| S
-    S -->|invokes create/start| R
-    R -->|configures and starts process| K
-    K --> W
-    S <-->|I/O, task state and exit notification| W
-    S <-->|runtime task service| C
+  CLI["Docker CLI"] --> API["Docker Engine API"]
+  API --> DAEMON["dockerd"]
+  DAEMON --> CD["containerd"]
+  CD --> SHIM["containerd-shim-runc-v2"]
+  SHIM -->|Container setup အတွက် ခေါ်သုံး| RUNC["runc"]
+  RUNC -->|OCI config အတိုင်း ပြင်ဆင်| KERNEL["Linux Kernel"]
+  KERNEL --> PROC["Container Application Process"]
+  SHIM -.->|I/O၊ Task State၊ Exit Status ကို ဆက်လက်စီမံ| PROC
+  RUNC -.->|Setup ပြီးနောက် Exit လုပ်နိုင်| EXIT["runc process ပြီးဆုံး"]
 ```
 
-ဒီပုံထဲက component တစ်ခုချင်းစီရဲ့ အလုပ်က မတူပါဘူး။
+ပထမဆုံး Docker CLI က အသုံးပြုသူ ရိုက်ထည့်တဲ့ Command ကို Docker Engine API ဆီ ပို့ပေးပါတယ်။ Docker Engine က Client–Server Architecture ကို အသုံးပြုပြီး `dockerd` Daemon၊ API နဲ့ CLI တို့ ပါဝင်ပါတယ်။ `dockerd` က Image၊ Container၊ Network နဲ့ Volume လို Docker Object တွေကို စီမံပါတယ်။ [17]
 
-- **Docker CLI** က user က `docker run` လို command တွေ ရိုက်ထည့်တဲ့ client ဖြစ်ပါတယ်။ CLI က Docker Engine API ကို request ပို့တာဖြစ်ပြီး `runc` ကို တိုက်ရိုက်ခေါ်တာ မဟုတ်ပါဘူး။
-- **Docker API** က client နဲ့ daemon ဆက်သွယ်ဖို့ interface ဖြစ်ပါတယ်။ Local Unix socket ကနေ ဆက်သွယ်နိုင်သလို configuration အပေါ်မူတည်ပြီး network ကနေ remote daemon ကိုလည်း ဆက်သွယ်နိုင်ပါတယ်။
-- **`dockerd`** က Docker daemon ဖြစ်ပြီး image၊ container၊ network နဲ့ volume လို Docker object တွေကို စီမံပါတယ်။ Container lifecycle request တွေကို အောက်ခံ component တွေဆီ လွှဲပေးပါတယ်။
-- **`containerd`** က container lifecycle management အတွက် အောက်ခံ manager ဖြစ်ပါတယ်။ Image content နဲ့ snapshotter ဆိုင်ရာအလုပ်တွေကိုလည်း ကိုင်တွယ်နိုင်ပြီး runtime shim တွေနဲ့ ချိတ်ဆက်ပါတယ်။
-- **`containerd-shim-runc-v2`** က containerd နဲ့ runtime engine ကြားက တည်တံ့နေတဲ့ shim process ဖြစ်ပါတယ်။ Container I/O၊ task state နဲ့ exit notification ကို ဆက်စပ်ပေးပြီး သက်ဆိုင်ရာ implementation မှာ orphan process cleanup/reaping ကိုလည်း ကူညီနိုင်ပါတယ်။
-- **`runc`** က OCI Runtime Specification ကို အကောင်အထည်ဖော်ထားတဲ့ low-level runtime engine တစ်ခု ဖြစ်ပါတယ်။ Container environment ကို configure လုပ်ပြီး workload process ကို စတင်ပေးပါတယ်။ ပုံမှန် shim-based flow မှာ `runc create` / `runc start` operation တွေ ပြီးသွားရင် `runc` command process က ပြန်ပြီး exit လုပ်နိုင်ပါတယ်။ Workload ကို `runc` CLI process ကိုယ်တိုင်က ဆက်ပြီး supervise လုပ်နေတာ မဟုတ်ပါဘူး။ Shim ကတော့ task ကို monitor လုပ်ဖို့နဲ့ I/O/control channel ကို ထိန်းထားဖို့ ဆက်ရှိနေနိုင်ပါတယ်။ [^24]
+လိုအပ်တဲ့ Container အလုပ်တွေကို `dockerd` က `containerd` ဆီ လွှဲပေးပါတယ်။ `containerd` က Image Content နဲ့ Snapshotter ကို အသုံးပြုပြီး Root Filesystem ပြင်ဆင်ခြင်း၊ Container Task နဲ့ Lifecycle တို့ကို စီမံပါတယ်။ [18]
 
-ဒီ architecture မှာ Docker Engine ရဲ့ job က user-facing API နဲ့ object management ကို စီမံခြင်း၊ `containerd` ရဲ့ job က container lifecycle ကို coordinate လုပ်ခြင်း၊ OCI runtime ရဲ့ job က သတ်မှတ်ထားတဲ့ bundle/configuration အတိုင်း kernel နဲ့ ချိတ်ဆက်ပြီး process ကို စတင်ခြင်းတို့ ဖြစ်ပါတယ်။ `containerd` runtime v2 model မှာ shim တစ်ခုက container တစ်ခုတည်းကိုပဲ ကိုင်တွယ်ရမယ်လို့ မသတ်မှတ်ထားပါဘူး။ Shim တစ်ခုနဲ့ task အများအပြားကို စီမံနိုင်မနိုင်က shim implementation နဲ့ grouping model အပေါ် မူတည်ပါတယ်။ [^10][^24]
+`containerd` နဲ့ Low-level Runtime ကြားမှာ `containerd-shim-runc-v2` ပါဝင်ပါတယ်။ Shim က Container Task ရဲ့ I/O နဲ့ အလုပ်ပြီးဆုံးမှုဆိုင်ရာ အခြေအနေတွေကို ဆက်စပ်ထိန်းသိမ်းပေးနိုင်ပါတယ်။ Runtime v2 Architecture မှာ `containerd` က Shim ကို အသုံးပြုပြီး Container Task ကို စီမံပါတယ်။ [18]
 
-## 9. Container တစ်ခု ဖန်တီးပြီး run လုပ်ပုံ
+Shim က `runc` ကို ခေါ်ပြီး OCI Bundle အတိုင်း Container Environment ကို ပြင်ဆင်စေပါတယ်။ `runc` က Namespace၊ Mount၊ cgroups နဲ့ Process စတဲ့ Setting တွေကို အသုံးပြုပြီး Application Process ကို စတင်ပေးပါတယ်။ ပုံမှန် Shim-based လုပ်ဆောင်ပုံမှာ `runc` Command က Setup ပြီးနောက် Exit လုပ်သွားနိုင်ပေမဲ့ Shim က Task ရဲ့ I/O နဲ့ Exit Status ကို ဆက်လက်စောင့်ကြည့်နိုင်ပါတယ်။ [14][18]
 
-Image ကို build လုပ်ခြင်း ဒါမှမဟုတ် registry ကနေ pull လုပ်ခြင်းဟာ OCI runtime ရဲ့ `create` နဲ့ `start` operation တွေနဲ့ မတူပါဘူး။ ပုံမှန်အားဖြင့် higher-level engine က image ကို ရယူပြီး root filesystem ပြင်ဆင်ကာ container တစ်ခုချင်းစီအတွက် OCI bundle (`config.json` အပါအဝင်) ကို ပြင်ဆင်ပေးပါတယ်။ အဲဒီနောက် OCI runtime ကို ခေါ်ပြီး lifecycle ကို ဆက်လုပ်ပါတယ်။ [^9]
+ဒီနေရာမှာ `runc`၊ Shim နဲ့ Container Application Process တို့ဟာ Process တစ်ခုတည်း မဟုတ်ကြောင်း သတိထားပါ။ `runc` က Container ကို စတင်ဖို့ အောက်ခံပြင်ဆင်မှုကို လုပ်ဆောင်ပေးတဲ့ Tool ဖြစ်ပြီး Shim က Task နဲ့ Runtime ကြားမှာ ဆက်လက်စီမံပေးပါတယ်။ Application ကတော့ Linux Kernel က စီမံထားတဲ့ Container Process အဖြစ် အလုပ်လုပ်နေပါတယ်။
+
+ဒီ Diagram ဟာ Linux ပေါ်က ပုံမှန် Docker Engine နဲ့ `containerd` Runtime v2 အသုံးပြုမှုကို အခြေခံထားတဲ့ ရိုးရှင်းသောပုံစံဖြစ်ပါတယ်။ Runtime ရွေးချယ်မှု၊ Version နဲ့ Configuration အလိုက် အသေးစိတ်ကွာခြားနိုင်ပြီး Container Engine အားလုံး ဒီပုံစံအတိုင်း အလုပ်လုပ်တာ မဟုတ်ပါဘူး။
+
+## 9. Container တစ်ခုကို ဘယ်လိုဖန်တီးပြီး Run လုပ်သလဲ။
+
+Image ရရှိပြီးနောက် Container Engine က အဲဒီ Image ကို အခြေခံပြီး Container တစ်ခုအတွက် လိုအပ်တဲ့ Filesystem နဲ့ Runtime Configuration ကို ပြင်ဆင်ပါတယ်။ OCI Runtime ကို အသုံးပြုတဲ့အခါ ဒီ Configuration တွေကို OCI Bundle ထဲက `config.json` မှာ ဖော်ပြထားနိုင်ပါတယ်။
+
+OCI Runtime Specification မှာ Container Lifecycle ကို `create`၊ `start`၊ Process အဆုံးသတ်ခြင်းနဲ့ `delete` ဆိုတဲ့ အဆင့်တွေအဖြစ် ခွဲထားပါတယ်။ `kill` Operation ကတော့ Container Process ဆီ သတ်မှတ်ထားတဲ့ Signal တစ်ခု ပို့ပေးဖို့ ဖြစ်ပါတယ်။ [14]
 
 ```mermaid
 flowchart TD
-    A[Build or pull image] --> B[Prepare root filesystem and OCI bundle]
-    B --> C[OCI runtime create]
-    C --> D[created state: environment ready, workload program not started]
-    D --> E[OCI runtime start]
-    E --> F[running state: workload process starts]
-    F -->|normal exit or crash| H[Workload process exits]
-    F -->|OCI runtime kill: deliver selected signal| K[Signal delivered to container process]
-    K -->|process terminates| H
-    K -->|process handles or ignores signal| F
-    H --> I[stopped state: process has exited]
-    I --> J[Explicit OCI runtime delete]
-    J --> L[Runtime removes resources created during create]
+  BUNDLE["OCI Bundle<br/>config.json + root filesystem"] --> CREATE["create"]
+  CREATE --> CREATED["created<br/>Environment ပြင်ဆင်ပြီး<br/>User Process မစသေး"]
+  CREATED --> START["start"]
+  START --> RUNNING["running<br/>User Process အလုပ်လုပ်နေ"]
+  RUNNING --> EXITED["Process Exit / ပုံမှန်အဆုံးသတ်"]
+  RUNNING --> KILL["kill(signal)<br/>သတ်မှတ်ထားတဲ့ Signal ပို့"]
+  KILL --> EXITED
+  EXITED --> STOPPED["stopped"]
+  STOPPED --> DELETE["delete"]
+  DELETE --> REMOVED["Runtime က create လုပ်တုန်းက ဖန်တီးခဲ့တဲ့ Resource များ ဖယ်ရှား"]
 ```
 
-ဒီ sequence မှာ အရေးကြီးတဲ့အချက်က `create` နဲ့ `start` ဟာ သီးခြား operation နှစ်ခု ဖြစ်နေခြင်းပါ။ `create` အဆင့်မှာ runtime က `config.json` အတိုင်း execution environment ကို ပြင်ဆင်ပေးပေမဲ့ `process.args` နဲ့ သတ်မှတ်ထားတဲ့ user workload ကို မစတင်ရသေးပါဘူး။ Runtime state က `created` ဖြစ်နေပါတယ်။ `start` ကို ခေါ်တဲ့အခါမှ workload program ကို စတင်ပြီး state က `running` ဖြစ်လာပါတယ်။ [^9]
+Diagram မှာ ပြထားတဲ့ `kill <signal>` ဟာ `SIGKILL` တစ်မျိုးတည်းကို ဆိုလိုတာ မဟုတ်ပါဘူး။ OCI Runtime ရဲ့ `kill` Operation က Caller ပေးလိုက်တဲ့ Signal ကို Container Process ဆီ ပို့ပေးတာဖြစ်ပြီး Signal အမျိုးအစားကိုလည်း သတ်မှတ်ပေးရပါတယ်။ ဥပမာ `SIGTERM`၊ `SIGKILL` သို့မဟုတ် အခြား Signal ဖြစ်နိုင်ပါတယ်။ Signal တချို့က Process ကို အဆုံးမသတ်စေဘဲ ဆက်လက်အလုပ်လုပ်စေနိုင်တာကြောင့် `kill` Operation ပြီးတိုင်း Container ဟာ `stopped` ဖြစ်သွားမယ်လို့ မဆိုလိုပါဘူး။ [14]
 
-Process က exit လုပ်သွားတာနဲ့ runtime resource အားလုံး အလိုအလျောက် ဖယ်ရှားပြီးသားလို့ မယူဆပါနဲ့။ OCI lifecycle မှာ process အဆုံးသတ်တာက `stopped` state ကို ဖြစ်စေပြီး၊ runtime ရဲ့ `delete` operation ကို သီးခြားခေါ်မှ `create` အဆင့်မှာ runtime က ဖန်တီးထားတဲ့ resource တွေကို ပြန်ဖယ်ရှားပါတယ်။ ဒါကြောင့် process termination နဲ့ runtime cleanup ဟာ မတူညီတဲ့ အဆင့်နှစ်ခုပါ။ [^9]
+### Create အဆင့်
 
-ဒီနေရာမှာ command အမည်ကိုလည်း ခွဲသိထားဖို့ လိုပါတယ်။ OCI Runtime Specification မှာ `create`, `start`, `kill` နဲ့ `delete` operation တွေကို သတ်မှတ်ထားပါတယ်။ `stop` ဆိုတဲ့စကားလုံးက Docker လို higher-level engine တွေမှာ ပိုတွေ့ရတဲ့ workflow ဖြစ်ပြီး ပုံမှန်အားဖြင့် `SIGTERM` ပို့ခြင်း၊ သတ်မှတ်ထားတဲ့ grace period စောင့်ခြင်း၊ မရပ်သေးရင် `SIGKILL` ပို့ခြင်းတို့ ပါဝင်နိုင်ပါတယ်။ အဲဒီ timeout တန်ဖိုးနဲ့ internal sequence ကို runtime/engine တိုင်းမှာ တူညီတယ်လို့ မယူဆရပါဘူး။ OCI မှာတော့ signal ပို့တဲ့ operation ကို `kill` လို့ ခေါ်ပြီး process ရပ်ပြီးတဲ့နောက် `delete` ကို သီးခြားလုပ်ရပါတယ်။
+`create` ဆိုတာ Container အတွက် လိုအပ်တဲ့ Runtime Environment ကို ပြင်ဆင်ပေးတဲ့ အဆင့်ဖြစ်ပါတယ်။ ဒီအချိန်မှာ Root Filesystem၊ Namespace၊ Mount နဲ့ အခြား Configuration တွေကို ပြင်ဆင်ထားပေမဲ့ OCI Spec အရ `process` မှာ သတ်မှတ်ထားတဲ့ User Program ကို မစတင်ရသေးပါဘူး။ ဒီအခြေအနေကို `created` State လို့ ခေါ်ပါတယ်။ [14]
 
-ဒီပုံက OCI runtime lifecycle ကို အခြေခံထားတဲ့ conceptual overview ဖြစ်ပါတယ်။ Image unpack လုပ်ပုံ၊ snapshotter၊ networking setup၊ shim နဲ့ daemon တို့ရဲ့ အလုပ်လုပ်ပုံတွေက engine နဲ့ runtime implementation အလိုက် ကွာနိုင်ပါတယ်။ `delete` လုပ်လိုက်တာနဲ့ persistent volume သို့မဟုတ် image ကိုပါ အလိုအလျောက် ဖျက်ပစ်တယ်လို့ မဆိုလိုပါဘူး။ OCI specification က container create အတွင်း မဖန်တီးခဲ့တဲ့ resource တွေကို delete လုပ်ရာမှာ မဖျက်ရကြောင်း သတ်မှတ်ထားပါတယ်။ [^9]
+### Start အဆင့်
 
-## 10. လက်တွေ့ဖြစ်ရပ်တစ်ခုနှင့် ချိတ်ဆက်ကြည့်ခြင်း
+`start` ဆိုတာ `created` အခြေအနေမှာ ပြင်ဆင်ထားတဲ့ Environment အတွင်း User Process ကို အမှန်တကယ် စတင် Run လုပ်စေတဲ့ Operation ဖြစ်ပါတယ်။ Process စတင်သွားတဲ့အခါ Container ဟာ `running` State ဖြစ်လာပါတယ်။ [14]
 
-Python နဲ့ ရေးထားတဲ့ web application တစ်ခုကို ဥပမာယူကြည့်ပါ။ ၎င်းအတွက် Python runtime တစ်မျိုး၊ လိုအပ်တဲ့ package အချို့နဲ့ configuration file တွေ ရှိရပါမယ်။ Application က အသုံးပြုမယ့် database service ကိုတော့ သီးခြား host သို့မဟုတ် container တစ်ခုမှာ run ထားနိုင်ပါတယ်။
+ဒါကြောင့် `create` လုပ်ပြီးသွားတာနဲ့ Application က အလုပ်လုပ်နေပြီလို့ မဆိုနိုင်ပါဘူး။ `start` အဆင့်ကိုလည်း လုပ်ဆောင်ဖို့ လိုပါတယ်။
 
-Web application အတွက် လိုအပ်တဲ့ Python runtime၊ package နဲ့ application files တွေကို image ထဲမှာ ထည့်ထားနိုင်ပါတယ်။ Image configuration မှာ default command နဲ့ working directory ကို သတ်မှတ်ထားနိုင်ပါတယ်။ Container တစ်ခု ဖန်တီးတဲ့အခါ runtime က ထို image ကို အခြေခံပြီး root filesystem၊ process၊ environment variable၊ mount နဲ့ လိုအပ်တဲ့ isolation setting တွေကို ပြင်ဆင်ပေးပါတယ်။
+### Container ကို ရပ်တန့်ခြင်း — OCI `kill` နဲ့ Docker `stop` ကို ခွဲကြည့်ပါ
 
-ဒါပေမဲ့ database ရဲ့ address၊ credentials၊ persistent data နဲ့ network access policy တို့ဟာ image တစ်ခုတည်းကနေ အလိုအလျောက် မရလာပါဘူး။ Deployment environment က အဲဒီအချက်တွေကို သီးခြားပေးပြီး စီမံရပါတယ်။ Image ထဲမှာ application package တွေ အတူတူပါဝင်နေခြင်းက deployment ကို ပြန်လုပ်ရတာ ပိုမိုတည်ငြိမ်စေပေမဲ့ runtime environment အားလုံးကို တူညီသွားစေတယ်လို့ မဆိုလိုပါဘူး။
+OCI Runtime ရဲ့ `kill` Operation က Signal တစ်ခုကို Container Process ဆီ ပို့ပေးတာပါ။ Signal ကို Caller က ရွေးပေးရပြီး `kill` ဆိုတဲ့ နာမည်ကြောင့် `SIGKILL` ပဲ ပို့တယ်လို့ မယူဆသင့်ပါဘူး။ [14]
 
-ဒီဥပမာမှာ image က application files နဲ့ default setting တွေကို သယ်ဆောင်ထားပြီး runtime configuration က သီးခြား container instance အတွက် လိုအပ်တဲ့ setting တွေကို ဖြည့်စွက်ပေးပါတယ်။ Container ကတော့ အဲဒီနှစ်ခုကို အခြေခံပြီး ဖန်တီးထားတဲ့ instance ဖြစ်ပါတယ်။
+Docker လို Higher-level Engine ရဲ့ `stop` Command ကတော့ ပုံမှန်အားဖြင့် Application ကို ပုံမှန်အတိုင်း အလုပ်သိမ်းဖို့ အခွင့်အရေးပေးပါတယ်။ Docker မှာ Image ထဲက `STOPSIGNAL` သို့မဟုတ် Container အတွက် သတ်မှတ်ထားတဲ့ Stop Signal ကို အရင်ပို့ပြီး Grace Period တစ်ခု စောင့်ပါတယ်။ အဲဒီအချိန်အတွင်း Process မရပ်သေးရင် `SIGKILL` ပို့ပြီး အဆုံးသတ်စေပါတယ်။ Timeout ကိုလည်း Configuration နဲ့ ပြောင်းနိုင်ပါတယ်။ [19]
 
-## 11. လက်တွေ့စစ်ဆေးခြင်း — လက်ရှိ process နဲ့ namespace view
+```mermaid
+flowchart LR
+  STOP["Docker stop"] --> SIG["Configured Stop Signal<br/>မသတ်မှတ်ထားရင် SIGTERM"]
+  SIG --> WAIT["Grace Period စောင့်"]
+  WAIT -->|Process ရပ်သွား| DONE["stopped"]
+  WAIT -->|မရပ်သေး| FORCE["SIGKILL"]
+  FORCE --> DONE
+```
 
-> **Lab status — Designed, not tested**  
-> ဒီ lab procedure ကို ရေးဆွဲထားခြင်းသာ ဖြစ်ပြီး host သို့မဟုတ် VM တစ်ခုခုမှာ execute လုပ်ကာ အတည်ပြုထားခြင်း မရှိသေးပါ။ အောက်ပါအချက်တွေက မျှော်မှန်းထားတဲ့ observation ကို ရှင်းပြထားတာသာဖြစ်ပြီး actual test output မဟုတ်ပါ။
+ဒါကြောင့် Docker ရဲ့ `stop` လုပ်ဆောင်ပုံကို OCI ရဲ့ `kill` Operation နဲ့ တူညီတဲ့အရာလို့ မယူဆသင့်ပါဘူး။ Docker `stop` က Graceful Shutdown Policy ကိုပါ ထည့်သွင်းထားတဲ့ Higher-level Operation ဖြစ်ပြီး OCI `kill` က သတ်မှတ်ထားတဲ့ Signal ကို ပို့ပေးတဲ့ Runtime Operation ဖြစ်ပါတယ်။
 
-### 11.1 ရည်ရွယ်ချက်
+### Delete အဆင့်
 
-လက်ရှိ Linux environment မှာ kernel release၊ `/proc` ကနေ မြင်ရတဲ့ PID 1 နဲ့ current shell တို့ရဲ့ PID namespace information ကို ကြည့်ပါမယ်။ မိမိအကောင့်အောက်တွင် rootless mode ဖြင့် ဖန်တီးထားပြီး စစ်ဆေးခွင့်ရှိသော local Podman container တစ်ခု ရှိနေပါက optional အနေနဲ့ နှိုင်းယှဉ်နိုင်ပါတယ်။
+Container Process အလုပ်ပြီးဆုံးသွားတဲ့အခါ Container ဟာ `stopped` State ဖြစ်လာပါတယ်။ ဒါပေမဲ့ Process ရပ်သွားတာနဲ့ Runtime က ဖန်တီးထားတဲ့ Resource အားလုံး အလိုအလျောက် ဖယ်ရှားပြီးပြီလို့ မဆိုလိုပါဘူး။
 
-ဒီ Lab က process နဲ့ namespace view အချို့ကိုသာ observation လုပ်တာပါ။ cgroup limit၊ capability set၊ mount isolation၊ seccomp သို့မဟုတ် LSM policy တို့ကို ပြင်ဆင်စမ်းသပ်တာ မဟုတ်သလို ဒီ control တွေ အားလုံး အလုပ်လုပ်နေကြောင်း အတည်ပြုချက်လည်း မပေးနိုင်ပါဘူး။ Learning objectives ထဲက အခြားအကြောင်းအရာတွေကိုတော့ chapter explanation နဲ့ review questions ကနေ နားလည်မှု စစ်ဆေးဖို့ ရည်ရွယ်ထားပါတယ်။
+OCI Runtime ရဲ့ `delete` Operation က `create` အဆင့်မှာ ဖန်တီးခဲ့တဲ့ Resource တွေကို ပြန်လည်ဖယ်ရှားပေးပါတယ်။ ဒီ Operation ကို ပုံမှန်အားဖြင့် Container `stopped` ဖြစ်ပြီးမှ လုပ်ဆောင်ရပါတယ်။ Runtime က မဖန်တီးခဲ့တဲ့ ပြင်ပ Resource တွေကိုတော့ `delete` လုပ်ရုံနဲ့ အလိုအလျောက် ဖျက်မပစ်ပါဘူး။ ဥပမာ Image၊ Persistent Volume နဲ့ အပြင်မှာ စီမံထားတဲ့ Data တွေကို သီးခြားစီ စီမံရပါတယ်။ [14]
 
-### 11.2 လိုအပ်ချက်နှင့် လုံခြုံရေး
+ဒီအဆင့်တွေကို ခွဲခြားနားလည်ထားရင် Container Process ရပ်သွားခြင်း၊ Container Runtime Resource ဖယ်ရှားခြင်းနဲ့ Image သို့မဟုတ် Persistent Data ဖျက်ခြင်းတို့ဟာ မတူညီတဲ့ လုပ်ဆောင်ချက်တွေဖြစ်ကြောင်း ပိုရှင်းလာပါလိမ့်မယ်။
 
-- Linux terminal တစ်ခုနဲ့ `/proc` filesystem ကို ဖတ်ရှုနိုင်ရပါမယ်။
-- `uname`၊ `cat` နဲ့ `readlink` command တွေ ရှိရပါမယ်။
-- Optional အဆင့်အတွက် မိမိပိုင် သို့မဟုတ် စစ်ဆေးခွင့်ရှိတဲ့ local rootless Podman container တစ်ခု ရှိရပါမယ်။
-- Container အသစ် မဖန်တီးရ။ Package မတင်ရ။ `sudo` မသုံးရ။ `docker` group ထဲ ဝင်ဖို့၊ socket permission ပြောင်းဖို့ မကြိုးစားရ။
+## 10. လက်တွေ့ဖြစ်ရပ်တစ်ခုနဲ့ ချိတ်ဆက်ကြည့်ခြင်း
 
-Step A မှာ လုပ်တဲ့ command တွေဟာ ပုံမှန် user နဲ့ လုပ်နိုင်တဲ့ read operation တွေ ဖြစ်ပါတယ်။ Optional `podman exec` အဆင့်ကတော့ container ထဲမှာ command process အသစ်တစ်ခုကို ခဏတာ စတင်စေပါတယ်။ ဒါကြောင့် အဲဒါကို read-only operation လို့ မခေါ်ပါဘူး။ Persistent file သို့မဟုတ် configuration ကို ပြောင်းဖို့ ရည်ရွယ်ထားတာ မဟုတ်ပေမဲ့ runtime က transient process တစ်ခုကို ဖန်တီးရပါတယ်။ Rootful Docker daemon ကို ထိန်းချုပ်နိုင်ခြင်းဟာ host ပေါ်မှာ root-level privilege ရရှိစေနိုင်တာကြောင့် ဒီ beginner lab မှာ Docker daemon ကို သွားမချိတ်ဆက်ပါနဲ့။ [^20]
+အခုလေ့လာခဲ့တဲ့ အကြောင်းအရာတွေကို နားလည်ဖို့ Python နဲ့ ရေးထားတဲ့ Web Application တစ်ခုကို ဥပမာအဖြစ် စဉ်းစားကြည့်ရအောင်။
 
-### 11.3 Step A — လက်ရှိ environment ကို စစ်ဆေးခြင်း
+Web Application တစ်ခုကို Run လုပ်ဖို့ Python Runtime လိုအပ်ပါတယ်။ ဒါ့အပြင် Application ရဲ့ အလုပ်လုပ်ပုံအပေါ် မူတည်ပြီး Python Package အချို့နဲ့ Configuration File တွေလည်း လိုအပ်နိုင်ပါတယ်။
 
-အောက်ပါ command တွေကို Linux terminal မှာ တစ်ခုချင်းစီ လုပ်ဆောင်ပါ။
+Application က Database ကို အသုံးပြုဖို့ လိုအပ်ရင် Database Server တစ်ခုနဲ့လည်း ချိတ်ဆက်ရပါမယ်။
+
+ဒီ Application အတွက် လိုအပ်တဲ့ Python Runtime၊ Package နဲ့ Application File တွေကို Container Image ထဲမှာ စုစည်းထားနိုင်ပါတယ်။
+
+Image ထဲမှာ Application ကို စတင်ဖို့ လိုအပ်တဲ့ Default Command နဲ့ Working Directory တွေကိုလည်း သတ်မှတ်ထားနိုင်ပါတယ်။
+
+အဲဒီ Image ကို အသုံးပြုပြီး Container တစ်ခု ဖန်တီးတဲ့အခါ Runtime က Container အတွက် Root Filesystem၊ Process နဲ့ လိုအပ်တဲ့ Environment Setting တွေကို ပြင်ဆင်ပေးပါတယ်။
+
+ဥပမာ Application က ဘယ် Database ကို ချိတ်ဆက်မလဲ၊ ဘယ် User နဲ့ အလုပ်လုပ်မလဲ၊ ဘယ် Network ကို အသုံးပြုမလဲဆိုတာတွေကို Container ဖန်တီးတဲ့အချိန်မှာ သီးခြားသတ်မှတ်နိုင်ပါတယ်။
+
+ဒီနေရာမှာ အရေးကြီးတဲ့အချက်တစ်ခု ရှိပါတယ်။
+
+Database Address၊ Password နဲ့ အရေးကြီးတဲ့ Secret တွေဟာ Image ထဲမှာ အလိုအလျောက် ပါလာတာ မဟုတ်ပါဘူး။ Deployment Environment ကနေ သီးခြားပေးပြီး စီမံရပါတယ်။
+
+ထို့အပြင် Application က အသုံးပြုမယ့် Data တွေကိုလည်း Container ဖျက်လိုက်တဲ့အခါ အလွယ်တကူ မပျောက်ဆုံးစေဖို့ Persistent Storage အဖြစ် သီးခြားစီမံထားဖို့ လိုအပ်ပါတယ်။
+
+ဒီဥပမာကို ကြည့်ခြင်းအားဖြင့် Image ဟာ Application အတွက် လိုအပ်တဲ့ File နဲ့ Default Setting တွေကို သယ်ဆောင်ထားတာဖြစ်ပြီး Runtime Configuration ကတော့ Container တစ်ခုချင်းစီအတွက် လိုအပ်တဲ့ Setting တွေကို ဖြည့်ဆည်းပေးတာဖြစ်ကြောင်း နားလည်နိုင်ပါတယ်။
+
+Container ဆိုတာ အဲဒီနှစ်ခုကို အခြေခံပြီး ဖန်တီးထားတဲ့ အလုပ်လုပ်နိုင်တဲ့ ပတ်ဝန်းကျင်တစ်ခု ဖြစ်ပါတယ်။
+
+## 11. လက်တွေ့စစ်ဆေးခြင်း — Linux Process နဲ့ Namespace ကို ကြည့်ရှုခြင်း
+
+ဒီအခန်းမှာ လေ့လာခဲ့တဲ့ Container နဲ့ Linux Process အကြောင်းတွေကို လက်တွေ့နားလည်နိုင်ဖို့ Linux Terminal မှာ အချက်အလက်အချို့ကို စစ်ဆေးကြည့်ပါမယ်။
+
+> **Lab အခြေအနေ — Designed, not tested**
+>
+> ဒီ Lab ကို ရေးဆွဲထားပေမဲ့ Linux Host သို့မဟုတ် Virtual Machine တစ်ခုခုမှာ အမှန်တကယ် Run လုပ်ပြီး စမ်းသပ်အတည်ပြုထားခြင်း မရှိသေးပါဘူး။ အောက်မှာ ဖော်ပြထားတဲ့ ရလဒ်ရှင်းလင်းချက်တွေဟာ မျှော်မှန်းထားတဲ့ လုပ်ဆောင်ပုံတွေကို နားလည်စေဖို့ ဖြစ်ပါတယ်။
+>
+> ဒီ Lab ရဲ့ ရည်ရွယ်ချက်က လက်ရှိ Linux Environment၊ Process နဲ့ Namespace တို့ရဲ့ အခြေအနေကို ကြည့်ရှုဖို့ ဖြစ်ပါတယ်။ Namespace၊ cgroups၊ Security Policy အားလုံးကို ပြင်ဆင်စမ်းသပ်တဲ့ Lab မဟုတ်ပါဘူး။
+
+### 11.1 Lab မစခင် လိုအပ်တာ
+
+ဒီ Lab ကို လုပ်ဖို့ Linux Terminal တစ်ခုနဲ့ `/proc` ကို ဖတ်ရှုနိုင်ဖို့ လိုအပ်ပါတယ်။ `uname`၊ `cat` နဲ့ `readlink` Command တွေ ရှိဖို့လည်း လိုအပ်ပါတယ်။
+
+နောက်ပိုင်း Optional အဆင့်မှာ ကိုယ်ပိုင် Account အောက်မှာ အသုံးပြုထားတဲ့ Rootless Podman Container ရှိရင် နှိုင်းယှဉ်ကြည့်နိုင်ပါတယ်။ Container မရှိသေးရင်လည်း အဲဒီအဆင့်ကို ကျော်သွားနိုင်ပါတယ်။
+
+ဒီ Lab မှာ System Configuration ပြောင်းလဲဖို့ မလိုအပ်ပါဘူး။ Container အသစ်တည်ဆောက်စရာလည်း မလိုပါဘူး။ `sudo` မသုံးပါနဲ့။ Docker Permission ပြောင်းလဲခြင်းနဲ့ Docker Group ထဲ ဝင်ခြင်းတို့လည်း မလုပ်ပါနဲ့။
+
+အထူးသဖြင့် Root Permission နဲ့ အလုပ်လုပ်နေတဲ့ Docker Daemon ကို ထိန်းချုပ်ခွင့်ရှိခြင်းဟာ Host System ပေါ်မှာ Root-Level အခွင့်အာဏာ ရရှိနိုင်တဲ့အထိ အန္တရာယ်ရှိနိုင်ပါတယ်။ ဒါကြောင့် ဒီ Beginner Lab မှာ Docker Daemon ကို အသုံးမပြုပါဘူး။
+
+### 11.2 လက်ရှိ Linux Environment ကို စစ်ဆေးခြင်း
+
+ပထမဆုံး ကိုယ်အသုံးပြုနေတဲ့ Linux ရဲ့ Kernel Version ကို ကြည့်ကြရအောင်။
 
 ```bash
 uname -r
+```
 
-printf 'PID 1 visible through this /proc mount: '
+ဒီ Command က လက်ရှိ Linux Environment မှာ အသုံးပြုနေတဲ့ Kernel Release Version ကို ဖော်ပြပေးပါတယ်။
+
+ဥပမာ `6.x.x` လို Version တစ်ခု ထွက်လာနိုင်ပါတယ်။ ကိုယ့်စက်မှာ ထွက်လာမယ့် တန်ဖိုးကတော့ အသုံးပြုထားတဲ့ Distribution နဲ့ Kernel Version ပေါ် မူတည်ပါတယ်။
+
+နောက်တစ်ဆင့်မှာ `/proc` ကနေ PID 1 ရဲ့ အချက်အလက်ကို ကြည့်ပါမယ်။
+
+```bash
 cat /proc/1/comm
+```
 
-printf 'PID namespace of PID 1 in this /proc view: '
+ဒီ Command က လက်ရှိ `/proc` ထဲမှာ PID 1 လို့ မြင်ရတဲ့ Process ရဲ့ အမည်ကို ဖော်ပြပေးပါတယ်။
+
+ဒီနေရာမှာ သတိထားရမှာက `/proc/1/comm` ဟာ အမြဲတမ်း Physical Host ရဲ့ ပထမဆုံး Process ကို ပြတာ မဟုတ်ပါဘူး။ ကိုယ်အသုံးပြုနေတဲ့ Environment က Container အတွင်းဖြစ်နေရင် Container ရဲ့ PID 1 ကို ပြနေနိုင်ပါတယ်။
+
+နောက်ထပ် Process ရဲ့ PID Namespace ကို ကြည့်ဖို့ အောက်ပါ Command ကို အသုံးပြုပါမယ်။
+
+```bash
 readlink /proc/1/ns/pid
+```
 
-printf 'PID namespace visible for this shell: '
+ဒီ Command က PID 1 Process အသုံးပြုနေတဲ့ PID Namespace ရဲ့ Identifier ကို ပြပေးပါတယ်။
+
+ကိုယ့်လက်ရှိ Shell ရဲ့ Namespace ကို ကြည့်ချင်ရင်တော့ -
+
+```bash
 readlink /proc/self/ns/pid
+```
 
-printf 'Cgroup view for PID 1 in this /proc mount:\n'
+ကို အသုံးပြုနိုင်ပါတယ်။
+
+နောက်ဆုံးအနေနဲ့ PID 1 က ဘယ် cgroup အောက်မှာ ရှိနေသလဲဆိုတာ ကြည့်ဖို့ အောက်ပါ Command ကို အသုံးပြုပါမယ်။
+
+```bash
 cat /proc/1/cgroup
 ```
 
-`uname -r` က လက်ရှိ command run လုပ်နေတဲ့ Linux environment ရဲ့ kernel release ကို ပြပါတယ်။ ဒီ command ကို physical host ပေါ်မှာ တိုက်ရိုက် run လုပ်နေတာလား၊ VM အတွင်းမှာလားဆိုတာကို ကိုယ်တိုင်သိထားဖို့ လိုပါတယ်။ VM ထဲမှာဆိုရင် ဒီ output က guest kernel release ဖြစ်ပါတယ်။
+ဒီ Command က လက်ရှိ `/proc` မြင်ကွင်းထဲက PID 1 ရဲ့ cgroup ဆိုင်ရာ အချက်အလက်တွေကို ပြပေးပါတယ်။
 
-`/proc/1/comm` ကို “physical host ရဲ့ PID 1” လို့ အမြဲမခေါ်သင့်ပါဘူး။ `/proc` ကို mount လုပ်ထားတဲ့ PID namespace ရဲ့ view အရ PID 1 လို့ မြင်ရတဲ့ process ကို ပြတာပါ။ Shell ကိုယ်တိုင် container အတွင်းမှာ ရှိနေတယ်ဆိုရင် အဲဒီ PID 1 ဟာ container ရဲ့ PID 1 ဖြစ်နိုင်ပါတယ်။ `/proc/1/ns/pid` က အဲဒီ PID 1 process ရဲ့ PID namespace handle ကို ပြပြီး `/proc/self/ns/pid` က လက်ရှိ command က မြင်ရတဲ့ ကိုယ်ပိုင် namespace handle ကို ပြပါတယ်။ `/proc` ရဲ့ process view ဟာ procfs mount လုပ်ထားတဲ့ PID namespace နဲ့ ဆက်စပ်နေတယ်ဆိုတာကို သတိထားပါ။ [^21]
+သို့သော် ထွက်လာတဲ့ Path တစ်ခုတည်းကို ကြည့်ပြီး Container မှာ CPU နဲ့ Memory Limit သတ်မှတ်ထား၊ မထား ဆုံးဖြတ်လို့ မရပါဘူး။ Cgroup Namespace နဲ့ Mount Configuration တို့အပေါ်မူတည်ပြီး ပြသပုံ ကွာခြားနိုင်ပါတယ်။
 
-`/proc/1/cgroup` ကလည်း အဲဒီ `/proc` view ထဲက PID 1 ရဲ့ cgroup membership ကို ဖော်ပြတာ ဖြစ်ပါတယ်။ Cgroup namespace နဲ့ mount configuration အလိုက် path တွေ ပြောင်းနိုင်တာကြောင့် path တစ်ခုတည်းကိုကြည့်ပြီး resource limit ရှိ/မရှိကို မဆုံးဖြတ်ပါနဲ့။ စစ်ဆေးထားတဲ့ output ကို အခြားသူနဲ့ မျှဝေမယ်ဆိုရင် host path၊ username၊ container ID၊ private network အချက်အလက်၊ secret နဲ့ token တို့ကို ဖယ်ရှား သို့မဟုတ် ဖုံးကွယ်ပြီးမှ မျှဝေပါ။
+### 11.3 ရှိပြီးသား Podman Container နဲ့ နှိုင်းယှဉ်ခြင်း
 
-### 11.4 Step B — ရှိပြီးသား rootless Podman container ကို နှိုင်းယှဉ်ခြင်း (Optional)
+မိမိပိုင် Linux Environment ထဲမှာ Rootless Mode နဲ့ Run ထားပြီး စစ်ဆေးခွင့်ရှိတဲ့ Podman Container ရှိနေတယ်ဆိုရင် အဲဒီ Container အတွင်းက အချက်အလက်တွေနဲ့ Host ရဲ့ အချက်အလက်တွေကို နှိုင်းယှဉ်ကြည့်နိုင်ပါတယ်။
 
-မိမိအကောင့်အောက်တွင် rootless mode ဖြင့် run ထားပြီး စစ်ဆေးခွင့်ရှိတဲ့ local Podman container ရှိမှသာ ဒီအဆင့်ကို လုပ်ပါ။ မရှိရင် ကျော်နိုင်ပါတယ်။ Podman client က remote service ကို ချိတ်ထားခြင်း၊ rootful service ကို အသုံးပြုနေခြင်း၊ အခြားသူပိုင် container ဖြစ်ခြင်း သို့မဟုတ် production workload ဖြစ်ခြင်းတို့ရှိပါက မစစ်ဆေးပါနဲ့။
+Rootless Podman ဆိုတာ ပုံမှန် User Permission အောက်မှာ Container တွေကို Run လုပ်နိုင်တဲ့ နည်းလမ်းဖြစ်ပါတယ်။
 
-`<CONTAINER>` ကို ကိုယ်ပိုင် container ရဲ့ name သို့မဟုတ် ID နဲ့ အစားထိုးပါ။
+ဒီအဆင့်ဟာ Optional ဖြစ်တဲ့အတွက် Container မရှိသေးရင် ကျော်သွားနိုင်ပါတယ်။ အခြားသူပိုင် Container၊ Production Container သို့မဟုတ် Remote Service ကိုတော့ မစစ်ဆေးပါနဲ့။
+
+ကိုယ်ပိုင် Container ရှိပြီး ခွင့်ပြုချက်ရှိတယ်ဆိုရင် အောက်ပါ Command ကို အသုံးပြုနိုင်ပါတယ်။
+
+`<CONTAINER>` နေရာမှာ ကိုယ့် Container ရဲ့ Name သို့မဟုတ် ID ကို ထည့်သွင်းပါ။
 
 ```bash
 podman exec <CONTAINER> sh -c '
   uname -r
-  printf "PID 1 visible in the container procfs view: "
+
+  printf "PID 1 visible in the container: "
   cat /proc/1/comm
-  printf "PID namespace of visible PID 1: "
+
+  printf "PID namespace of PID 1: "
   readlink /proc/1/ns/pid
-  printf "PID namespace visible for this exec process: "
+
+  printf "PID namespace of this shell: "
   readlink /proc/self/ns/pid
-  printf "Cgroup view for visible PID 1:\n"
+
+  printf "Cgroup information of PID 1:\n"
   cat /proc/1/cgroup
 '
 ```
 
-`podman exec` က container ရဲ့ primary process ကို အစားထိုးတာ မဟုတ်ပါဘူး။ Container အတွင်း command အသစ်တစ်ခုကို ခဏတာ run စေပြီး command ပြီးသွားတဲ့အခါ အဲဒီ process ရပ်သွားပါတယ်။ Minimal image မှာ `sh`၊ `uname`၊ `cat` သို့မဟုတ် `readlink` မပါနိုင်တာကြောင့် command မအောင်မြင်ရင် package install လုပ်တာ၊ container configuration ပြောင်းတာ မလုပ်ပါနဲ့။ ဒီ lab ရဲ့ ရည်ရွယ်ချက်က ရှိပြီးသား environment ကိုသာ ကြည့်ဖို့ ဖြစ်ပါတယ်။ [^22]
+ဒီ Command မှာ `podman exec` က Container အတွင်းမှာ Command အသစ်တစ်ခုကို ခဏတာ Run လုပ်ပေးပါတယ်။
 
-**Docker ကို အစားထိုးအသုံးမပြုရန်။** Rootful Docker daemon ရဲ့ socket ကို အသုံးပြုခွင့်ရှိခြင်း၊ `docker` group ထဲ ပါဝင်ခြင်းတို့က host အတွက် အလွန်ကျယ်ပြန့်တဲ့ privilege ပေးနိုင်ပါတယ်။ Docker documentation ကလည်း `docker` group သည် root-level privileges ပေးကြောင်း သတိပေးထားပါတယ်။ ထို့ကြောင့် ဒီ lab အတွက် user အသစ်ကို group ထဲ ထည့်ခြင်း၊ `sudo` သုံးခြင်း၊ daemon socket ကို expose လုပ်ခြင်းတို့ကို မညွှန်ကြားပါ။ [^20]
+Container ရဲ့ Main Application ကို ရပ်တန့်ခြင်း သို့မဟုတ် အစားထိုးခြင်း မဟုတ်ပါဘူး။ Command ပြီးသွားတဲ့အခါ အဲဒီ Command အတွက် ဖန်တီးထားတဲ့ Process ကလည်း ရပ်သွားပါတယ်။
 
-### 11.5 ရလဒ်ကို ဘယ်လိုဖတ်မလဲ
+သို့သော် Container ထဲမှာ `sh`၊ `cat`၊ `readlink` လို Command တွေ မပါဝင်နိုင်ပါဘူး။ အထူးသဖြင့် Minimal Container Image တွေမှာ Command တချို့ မရှိနိုင်တဲ့အတွက် အလုပ်မလုပ်ရင် Package ထည့်သွင်းခြင်း သို့မဟုတ် Configuration ပြောင်းလဲခြင်း မလုပ်ဘဲ အဲဒီအဆင့်ကို ကျော်နိုင်ပါတယ်။
 
-ဒီ lab အတွက် PID number၊ namespace inode number ဒါမှမဟုတ် cgroup path တစ်ခုခုကို ကြိုတင်သတ်မှတ်ထားတဲ့ expected output အဖြစ် မပေးထားပါဘူး။ အဲဒီတန်ဖိုးတွေဟာ environment နဲ့ configuration အလိုက် ကွာခြားပါတယ်။ စစ်ဆေးပြီးနောက် အောက်ပါအချက်တွေကို ရှင်းပြနိုင်ရပါမယ်။
+### 11.4 ရလဒ်တွေကို ဘယ်လိုနားလည်ရမလဲ။
 
-- Host Linux environment နဲ့ ပုံမှန် OS-level container မှာ `uname -r` တူညီတာဟာ shared-kernel model နဲ့ ကိုက်ညီတဲ့ observation ဖြစ်ပါတယ်။ ဒါပေမဲ့ release string တူရုံနဲ့ kernel instance တစ်ခုတည်းဖြစ်ကြောင်းကို သီးခြားသက်သေမပြနိုင်ပါဘူး။
-- PID namespace သီးခြားထားတဲ့ container တစ်ခုမှာ container အတွင်းမြင်ရတဲ့ PID 1 ဟာ host ရဲ့ PID 1 နဲ့ မတူနိုင်ပါဘူး။
-- Container တစ်ခုတိုင်းမှာ PID namespace သီးခြားဖန်တီးထားရမယ်လို့ မဆိုလိုပါဘူး။ PID namespace ကို အခြား workload နဲ့ မျှဝေထားနိုင်ပါတယ်။
-- `/proc/1/cgroup` မှာ မြင်ရတဲ့ path ဟာ cgroup namespace နဲ့ procfs mount configuration အပေါ် မူတည်ပါတယ်။ Path ကွာခြားမှုတစ်ခုတည်းက resource isolation ရှိကြောင်း သို့မဟုတ် မရှိကြောင်း သက်သေမဟုတ်ပါဘူး။
-- Process listing နဲ့ namespace identifier တွေကို ကြည့်ရုံနဲ့ security isolation အပြည့်အစုံကို အတည်မပြုနိုင်ပါဘူး။
+Host Linux နဲ့ ပုံမှန် Linux Container တို့မှာ `uname -r` ရဲ့ Kernel Version တူညီနေတာကို တွေ့ရနိုင်ပါတယ်။ ဒါဟာ Kernel ကို မျှဝေသုံးတဲ့ ပုံမှန် Container Model နဲ့ ကိုက်ညီတဲ့ ရလဒ်တစ်ခု ဖြစ်ပါတယ်။
 
-### 11.6 ပြဿနာဖြစ်လာရင်
+ဒါပေမဲ့ Kernel Version String တူညီနေတာတစ်ခုတည်းနဲ့ Kernel Instance တစ်ခုတည်းဖြစ်ကြောင်း အပြည့်အဝ သက်သေပြနိုင်တာ မဟုတ်ပါဘူး။
 
-| တွေ့ရတဲ့အခြေအနေ | စဉ်းစားရန် |
-|---|---|
-| `/proc/1/comm` မဖတ်နိုင်ခြင်း | `/proc` mount မရှိခြင်း၊ permission သို့မဟုတ် container ကန့်သတ်ချက်ကြောင့် ဖြစ်နိုင်ပါတယ်။ Configuration မပြောင်းပါနဲ့။ |
-| `readlink` မရှိခြင်း | Minimal user space ဖြစ်နိုင်ပါတယ်။ Optional အဆင့်ကို ကျော်ပြီး limitation အဖြစ် မှတ်သားပါ။ |
-| `podman exec` အောင်မြင်မှုမရှိခြင်း | Container ရပ်နေခြင်း၊ access မရှိခြင်း သို့မဟုတ် image ထဲမှာ `sh` မပါခြင်း ဖြစ်နိုင်ပါတယ်။ Container အသစ် မဖန်တီးပါနဲ့။ |
-| Host နဲ့ container ရဲ့ `uname -r` မတူခြင်း | VM-based runtime၊ remote environment သို့မဟုတ် စစ်ဆေးနေတဲ့ system boundary ကို ပြန်စစ်ပါ။ Shared-kernel assumption ကို အလိုအလျောက် မချမှတ်ပါနဲ့။ |
-| Namespace link တန်ဖိုးတူနေခြင်း | ထို namespace type ကို share လုပ်ထားနိုင်ပါတယ်။ အဲဒါတစ်ခုတည်းကြောင့် lab မှားနေတယ်လို့ မဆိုလိုပါဘူး။ |
+PID Namespace သီးခြားထားတဲ့ Container တစ်ခုမှာ Container အတွင်းက PID 1 ဟာ Host ဘက်မှာ အခြား PID နံပါတ်တစ်ခု ဖြစ်နေနိုင်ပါတယ်။ ဒါဟာ Process တစ်ခုတည်းကို Namespace မတူညီတဲ့ မြင်ကွင်းကနေ ကြည့်နေရခြင်းကြောင့် ဖြစ်ပါတယ်။
 
-### 11.7 Cleanup
+Container တိုင်းမှာ PID Namespace သီးခြားဖန်တီးထားရမယ်လို့လည်း မဆိုလိုပါဘူး။ တချို့ Container တွေဟာ အခြား Workload တစ်ခုနဲ့ PID Namespace ကို မျှဝေထားနိုင်ပါတယ်။
 
-Step A မှာ configuration မပြောင်းထားသလို file သို့မဟုတ် process အသစ်လည်း မဖန်တီးပါဘူး။ Step B ကို လုပ်ခဲ့ရင် `podman exec` နဲ့ စတင်ထားတဲ့ command ဟာ ပြီးဆုံးချိန်မှာ ရပ်သွားရပါမယ်။ မသိတဲ့ process ကို terminate မလုပ်ပါနဲ့။ ဒီ lab အတွက် persistent resource cleanup လုပ်စရာ မရှိပါဘူး။
+အလားတူ `/proc/1/cgroup` မှာ ပြတဲ့ Path တွေဟာ Cgroup Namespace နဲ့ Mount Configuration ပေါ် မူတည်ပြီး ကွာခြားနိုင်ပါတယ်။ ဒါကြောင့် Path မတူတာတစ်ခုတည်းနဲ့ Resource Isolation ရှိကြောင်း သို့မဟုတ် မရှိကြောင်း ဆုံးဖြတ်လို့ မရပါဘူး။
 
-## 12. Concept Check
+နောက်ထပ် သတိပြုရမှာက Process စာရင်းနဲ့ Namespace Identifier တွေကို ကြည့်ရုံနဲ့ Container ရဲ့ Security အပြည့်အဝ ကောင်းမွန်ကြောင်း အတည်ပြုလို့ မရပါဘူး။ Security အတွက် Capabilities၊ Seccomp၊ Filesystem Permission နဲ့ LSM Policy တွေကိုပါ စစ်ဆေးဖို့ လိုအပ်ပါတယ်။
 
-Lab မှာ command တွေ run လုပ်ကြည့်ပြီးရင် အောက်ပါမေးခွန်းတွေကို ကိုယ့်စကားနဲ့ ဖြေကြည့်ပါ။ ဒီအပိုင်းက command output တစ်ခုတည်းကို ပြန်ဆိုဖို့ မဟုတ်ဘဲ အခန်းအစမှာ လေ့လာခဲ့တဲ့ concept တွေကို ဆက်စပ်စဉ်းစားနိုင်မလားဆိုတာ စစ်ဖို့ပါ။
+### 11.5 စစ်ဆေးတဲ့အခါ ပြဿနာဖြစ်ရင် ဘာလုပ်မလဲ။
 
-1. Namespace နဲ့ cgroup တို့ရဲ့ အဓိကကွာခြားချက်က ဘာလဲ။ Process တစ်ခုရဲ့ PID view ကို ခွဲထားခြင်းနဲ့ CPU/memory usage ကို ကန့်သတ်ခြင်းတို့ကို နှိုင်းယှဉ်ပါ။
-2. Process တစ်ခုဟာ PID namespace အသစ် မဖန်တီးဘဲလည်း container ထဲမှာ run နေနိုင်သလား။ ဘယ်လို configuration မျိုးမှာ ဖြစ်နိုင်သလဲ။
-3. Container image နဲ့ running container တို့ရဲ့ lifecycle က ဘယ်လိုကွာသလဲ။
-4. Container ကို lightweight VM လို့ပဲ ခေါ်တာ ဘာကြောင့် မတိကျသလဲ။ Kernel boundary ကို အခြေခံပြီး ရှင်းပြပါ။
-5. PID namespace သီးခြားထားတဲ့ process တစ်ခုက အတွင်းဘက်မှာ PID 1 လို့ မြင်ရပြီး host ဘက်မှာ အခြား PID နံပါတ်တစ်ခု ဖြစ်နေနိုင်တာ ဘာကြောင့်လဲ။
-6. `runc` နဲ့ `containerd-shim` တို့ရဲ့ တာဝန်က ဘယ်လိုကွာသလဲ။
-7. OCI `create` ပြီးတာနဲ့ workload process က run နေပြီလို့ ဘာကြောင့် မဆိုနိုင်သလဲ။
-8. Process ရပ်သွားခြင်းနဲ့ OCI `delete` ပြီးဆုံးခြင်းတို့ ဘာကြောင့် မတူညီတဲ့အရာတွေ ဖြစ်သလဲ။
+`/proc/1/comm` ကို ဖတ်လို့မရရင် `/proc` Mount မရှိတာ ဒါမှမဟုတ် Permission ကန့်သတ်ထားတာ ဖြစ်နိုင်ပါတယ်။
 
-ဒီမေးခွန်းတွေထဲက namespace API၊ cgroup controller၊ capability set နဲ့ networking အကြောင်း အသေးစိတ်လိုအပ်တဲ့အပိုင်းတွေကို သက်ဆိုင်ရာ နောက်ပိုင်း chapter တွေမှာ ပြန်လေ့လာပါမယ်။
+`readlink` Command မရှိရင် အသုံးပြုနေတဲ့ Environment ဟာ Minimal User Space ဖြစ်နိုင်ပါတယ်။ ဒီအခြေအနေမှာ Package အသစ်ထည့်စရာ မလိုဘဲ Optional အဆင့်ကို ကျော်နိုင်ပါတယ်။
 
-## 13. အနှစ်ချုပ်
+`podman exec` အလုပ်မလုပ်ရင် Container ရပ်နေခြင်း၊ Access မရှိခြင်း ဒါမှမဟုတ် Image ထဲမှာ `sh` မပါဝင်ခြင်းတို့ကြောင့် ဖြစ်နိုင်ပါတယ်။
 
-ပုံမှန် Linux OS-level container တစ်ခုဟာ guest kernel သီးခြား boot လုပ်ထားတဲ့ VM မဟုတ်ပါဘူး။ Host Linux kernel က process တစ်ခု ဒါမှမဟုတ် process tree တစ်ခုကို စီမံနေပြီး namespaces က process တွေ မြင်ရတဲ့ resource view ကို ခွဲပေးပါတယ်။ Cgroups က resource အသုံးပြုမှုကို စီမံပါတယ်။ Capabilities က လိုအပ်တဲ့ permission အပိုင်းတွေကိုပဲ ပေးနိုင်စေပါတယ်။ Root filesystem နဲ့ mount configuration က process အတွက် မြင်ရမယ့် filesystem ကို ပြင်ဆင်ပေးပါတယ်။ လိုအပ်တဲ့အခါ seccomp နဲ့ LSM policy တွေက ထပ်ဆောင်း security control အဖြစ် ပါဝင်နိုင်ပါတယ်။
+Host နဲ့ Container ရဲ့ Kernel Version မတူရင် VM-based Runtime၊ Remote Environment ဒါမှမဟုတ် ကိုယ်စစ်ဆေးနေတဲ့ System Boundary ကို ပြန်လည်စစ်ဆေးဖို့ လိုအပ်ပါတယ်။
 
-Image က application files နဲ့ default setting တွေကို စုစည်းထားတဲ့ artifact ဖြစ်ပါတယ်။ Runtime က particular container instance အတွက် environment ကို ဖန်တီးပြီး process ကို စတင်ပေးပါတယ်။ Engine သို့မဟုတ် manager ကတော့ image၊ runtime နဲ့ အခြား service တွေကို user-facing workflow ထဲမှာ ချိတ်ဆက်စီမံပေးနိုင်ပါတယ်။ ဒီ component တွေရဲ့ boundary က product အလိုက် ကွာခြားနိုင်ပါတယ်။
+Namespace Identifier တူညီနေတယ်ဆိုရင်လည်း အဲဒီ Namespace ကို မျှဝေထားတဲ့ အခြေအနေ ဖြစ်နိုင်ပါတယ်။ အဲဒါတစ်ခုတည်းကြောင့် Lab မှားနေတယ်လို့ မဆိုနိုင်ပါဘူး။
 
-Container ကို ကောင်းကောင်းနားလည်ဖို့ Linux process model ကိုလည်း သိထားဖို့ လိုပါတယ်။ Process တစ်ခုကို ဘယ်လိုဖန်တီးသလဲ၊ kernel နဲ့ ဘယ်လိုဆက်သွယ်သလဲဆိုတာကို Chapter 02 မှာ ဆက်လေ့လာပါမယ်။
+### 11.6 Lab ပြီးဆုံးတဲ့အခါ
 
-## 14. ပြန်လည်သုံးသပ်ရန် မေးခွန်းများ
+ဒီ Lab ရဲ့ ပထမအပိုင်းမှာ System Configuration ကို မပြောင်းလဲထားသလို File သို့မဟုတ် Persistent Process အသစ်လည်း ဖန်တီးထားတာ မရှိပါဘူး။
 
-1. Linux OS-level container ကို isolated process environment လို့ ခေါ်ရတဲ့ အကြောင်းရင်းကို ဥပမာတစ်ခုနဲ့ ရှင်းပြပါ။
-2. Container နဲ့ VM တို့ရဲ့ kernel boundary ဘယ်လိုကွာသလဲ။
-3. Type 1 နဲ့ Type 2 hypervisor တို့ရဲ့ stack ကို ပုံဆွဲပြီး နှိုင်းယှဉ်ပါ။
-4. Image ထဲမှာ dependency တွေ ထည့်ထားခြင်းက deployment consistency ကို ဘယ်လိုကူညီသလဲ။ ဘယ်အချက်တွေကိုတော့ သီးခြားစီမံရသေးသလဲ။
-5. `chroot()` က ဘာကိုပြောင်းပေးသလဲ။ ဘာကြောင့် security sandbox အပြည့်အစုံ မဖြစ်သလဲ။
-6. FreeBSD Jails နဲ့ Solaris Zones တို့ကို Linux namespaces နဲ့ implementation တူတယ်လို့ မဆိုသင့်တဲ့ အကြောင်းရင်းက ဘာလဲ။
-7. LXC နဲ့ Docker တို့ရဲ့ အဓိကကွာခြားတဲ့ အခန်းကဏ္ဍကို ရှင်းပြပါ။
-8. OCI specification သုံးခုက ဘယ်ပြဿနာတွေကို ဖြေရှင်းပေးသလဲ။
-9. Namespace နဲ့ cgroup တို့ရဲ့ တာဝန်ကို ဥပမာတစ်ခုနဲ့ ခွဲပြပါ။
-10. Linux capabilities က root privilege ကို ဘယ်လို permission အပိုင်းငယ်တွေ ခွဲပေးသလဲ။
-11. Image ရဲ့ default configuration နဲ့ per-container runtime configuration တို့ ဘယ်လိုကွာသလဲ။
-12. OCI runtime မှာ `create` နဲ့ `start` ကို သီးခြားအဆင့်အဖြစ် ခွဲထားရတဲ့ အကြောင်းရင်းကို ရှင်းပြပါ။
-13. Kata Containers ကို သုံးထားတဲ့အခါ “container များသည် host kernel ကို မျှဝေသုံးသည်” ဆိုတဲ့ စကားကို ဘယ်လိုပြင်ဆင်နားလည်ရမလဲ။
+Podman အပိုင်းကို လုပ်ဆောင်ခဲ့တယ်ဆိုရင် `podman exec` ကနေ စတင်ထားတဲ့ Command ဟာ ပြီးဆုံးချိန်မှာ ရပ်တန့်သွားရပါမယ်။
 
-## 15. ကိုးကားရင်းမြစ်များ
+မသိတဲ့ Process တွေကို အလွယ်တကူ Kill မလုပ်ပါနဲ့။ ဒီ Lab အတွက် သီးခြား Cleanup လုပ်ဖို့လည်း မလိုအပ်ပါဘူး။
 
-**သုတေသနအချက်အလက် စစ်ဆေးသည့်နေ့:** 8 November 2026။ Rolling documentation များကို chapter freeze မလုပ်မီ ထပ်မံစစ်ဆေးရန် လိုအပ်သည်။ Versioned specification များအတွက် အောက်တွင် ဖော်ပြထားသည့် release baseline များကို အသုံးပြုထားသည်။
+စစ်ဆေးထားတဲ့ Output တွေကို တခြားသူတွေနဲ့ မျှဝေချင်တယ်ဆိုရင် Host Path၊ Username၊ Container ID၊ Private Network အချက်အလက်၊ Password နဲ့ Secret တွေကို ဖယ်ရှားပြီးမှ မျှဝေသင့်ပါတယ်။
 
-[^1]: Linux man-pages project, [`chroot(2)`](https://man7.org/linux/man-pages/man2/chroot.2.html). `chroot()` ရဲ့ pathname-resolution သက်ရောက်မှု၊ current working directory နဲ့ open file descriptor များအပေါ် သက်ရောက်မှု၊ security sandbox မဟုတ်ကြောင်း သတိပေးချက်။
-[^2]: Linux man-pages project, [`namespaces(7)`](https://man7.org/linux/man-pages/man7/namespaces.7.html). Namespace abstraction နဲ့ Linux namespace type များ။
-[^3]: Linux man-pages project, [`cgroups(7)`](https://man7.org/linux/man-pages/man7/cgroups.7.html) နှင့် Linux kernel documentation, [Control Group v2](https://docs.kernel.org/admin-guide/cgroup-v2.html). Resource grouping၊ accounting နဲ့ limits။
-[^4]: Linux man-pages project, [`capabilities(7)`](https://man7.org/linux/man-pages/man7/capabilities.7.html). Linux capabilities နဲ့ per-thread attribute အကြောင်း။
-[^5]: Linux man-pages project, [`time_namespaces(7)`](https://man7.org/linux/man-pages/man7/time_namespaces.7.html). `CLOCK_MONOTONIC` နဲ့ `CLOCK_BOOTTIME` offsets၊ `CLOCK_REALTIME` မပါဝင်ကြောင်း။
-[^6]: Open Container Initiative, [About the OCI](https://opencontainers.org/about/overview/). OCI ကို 22 June 2015 မှာ စတင်ဖွဲ့စည်းခဲ့ခြင်းနဲ့ specification scope။
-[^7]: Open Container Initiative, [Image Specification v1.1.1](https://github.com/opencontainers/image-spec/tree/v1.1.1), အထူးသဖြင့် [Image Configuration](https://github.com/opencontainers/image-spec/blob/v1.1.1/config.md). Image layers နဲ့ image configuration။ Release notice: [2 April 2025](https://opencontainers.org/release-notices/v1-1-1-image-spec/).
-[^8]: Open Container Initiative, [Distribution Specification v1.1.1](https://github.com/opencontainers/distribution-spec/tree/v1.1.1). Release notice: [1 March 2025](https://opencontainers.org/release-notices/v1-1-1-distribution-spec/).
-[^9]: Open Container Initiative, [Runtime Specification v1.3.0](https://github.com/opencontainers/runtime-spec/tree/v1.3.0), [Runtime and Lifecycle](https://github.com/opencontainers/runtime-spec/blob/v1.3.0/runtime.md). OCI runtime configuration နဲ့ `create`/`start`/`delete` lifecycle။ Release notice: [4 November 2025](https://opencontainers.org/release-notices/v1-3-0-runtime-spec/).
-[^10]: Docker Docs, [Docker Engine](https://docs.docker.com/engine/) နှင့် [What is Docker?](https://docs.docker.com/get-started/docker-overview/). Docker Engine ရဲ့ client-server architecture၊ CLI၊ API နဲ့ daemon။
-[^11]: FreeBSD Documentation Project, [FreeBSD Handbook — Jails and Containers](https://docs.freebsd.org/en/books/handbook/jails/). Jails ရဲ့ ရည်ရွယ်ချက်နဲ့ FreeBSD 4.X ကတည်းက ရှိနေခြင်း။
-[^12]: FreeBSD Project, [`jail(2)` manual page](https://man.freebsd.org/cgi/man.cgi?query=jail&sektion=2). `jail()` system call ကို FreeBSD 4.0 မှာ ထည့်သွင်းခဲ့ကြောင်း HISTORY entry။
-[^13]: Oracle, [Solaris Express 2/04 — What's New](https://docs.oracle.com/cd/E19253-01/819-0361/whatsnew-227/index.html) နှင့် [Solaris 10 — What's New](https://docs.oracle.com/cd/E19957-01/820-2714/chapter1-1a/index.html). Zones ကို Solaris Express 2/04 မှာ စတင်မိတ်ဆက်ပြီး Solaris 10 3/05 မှာ ပါဝင်လာခြင်း။
-[^14]: Linux Containers Project, [LXC Introduction](https://linuxcontainers.org/lxc/) နှင့် [LXC upstream README](https://github.com/lxc/lxc/blob/main/README.md). LXC ရဲ့ userspace interface၊ kernel features နဲ့ 2008 မှစ၍ ဖွံ့ဖြိုးလာတဲ့ project history။
-[^15]: Docker, [Docker: Nine Years YOUNG](https://www.docker.com/blog/docker-nine-years-young/), 15 March 2022; Docker Docs, [Docker Engine prior releases](https://docs.docker.com/engine/release-notes/prior-releases/). 15 March 2013 public demonstration နဲ့ 23 March 2013 0.1.0 initial public release။
-[^16]: Kata Containers Documentation, [Quick Start — What is Kata Containers?](https://kata-containers.github.io/kata-containers/quick-start-guide/). Container workload ကို lightweight VM နဲ့ guest kernel အတွင်း run လုပ်ပုံ။
-[^17]: The Linux Foundation, [A Brief Look at the Roots of Linux Containers](https://www.linuxfoundation.org/blog/blog/a-brief-look-at-the-roots-of-linux-containers). Unix Version 7 ခေတ်ရှိ `chroot` နဲ့ container history ရဲ့ အစောပိုင်းနောက်ခံ။
-[^18]: Linux kernel documentation, [Seccomp BPF](https://docs.kernel.org/userspace-api/seccomp_filter.html). System call filter ရဲ့ ရည်ရွယ်ချက်နဲ့ ၎င်းတစ်ခုတည်းက sandbox မဖြစ်နိုင်ကြောင်း။
-[^19]: Linux kernel documentation, [Linux Security Module Usage](https://docs.kernel.org/admin-guide/LSM/index.html). LSM framework နဲ့ security policy ချိတ်ဆက်အသုံးပြုပုံ။
-[^20]: Docker Docs, [Linux post-installation steps — Docker group](https://docs.docker.com/engine/install/linux-postinstall/) နှင့် [Protect the Docker daemon socket](https://docs.docker.com/engine/security/protect-access/). Rootful daemon socket access နဲ့ `docker` group ရဲ့ privilege အန္တရာယ်။
-[^21]: Linux man-pages project, [`proc(5)`](https://man7.org/linux/man-pages/man5/proc.5.html) နှင့် [`pid_namespaces(7)`](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html). Procfs view နဲ့ PID namespace ဆက်နွယ်မှု။
-[^22]: Podman Documentation, [`podman-exec(1)`](https://docs.podman.io/en/latest/markdown/podman-exec.1.html), [Podman rootless mode](https://docs.podman.io/en/latest/markdown/podman.1.html) နှင့် [Rootless containers](https://docs.podman.io/en/latest/markdown/podman-create.1.html). Running container အတွင်း command အသစ်တစ်ခု run လုပ်ပုံနဲ့ rootless operation။
+## 12. Concept Check — နားလည်မှုကို ပြန်လည်စစ်ဆေးခြင်း
 
-[^23]: Red Hat, [What is a hypervisor?](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor). Type 1 (bare-metal) နဲ့ Type 2 (hosted) hypervisor တို့ရဲ့ ကွာခြားချက်။
+ဒီအခန်းမှာ လေ့လာခဲ့တဲ့ အကြောင်းအရာတွေကို တကယ်နားလည်လာပြီလားဆိုတာ ကိုယ့်ကိုယ်ကို ပြန်မေးကြည့်ဖို့ လိုအပ်ပါတယ်။
 
-[^24]: containerd Project, [Runtime v2 — Architecture](https://containerd.org/docs/2.3/runtime-v2/). `containerd` နဲ့ shim ဆက်သွယ်ပုံ၊ shim က OCI runtime engine (ဥပမာ `runc`) ကို invoke လုပ်ပုံ၊ I/O နဲ့ task lifecycle ကို ဆက်စပ်ထိန်းသိမ်းပုံ။ containerd 2.3 documentation ကို အခြေခံထားပါတယ်။ အသုံးပြုမယ့် containerd နဲ့ shim version အလိုက် implementation detail ကွာနိုင်လို့ deployment version ကိုလည်း စစ်ဆေးပါ။
+အောက်ပါမေးခွန်းတွေကို အလွတ်ကျက်ဖြေဖို့ မဟုတ်ဘဲ အကြောင်းအရာတွေကို ဆက်စပ်ပြီး ကိုယ့်စကားနဲ့ ပြန်ရှင်းပြနိုင်ဖို့ ရည်ရွယ်ထားပါတယ်။
+
+1. Linux OS-level Container ကို သီးခြား Process Environment တစ်ခုလို့ ဘာကြောင့် ခေါ်ဆိုနိုင်သလဲ။ လက်တွေ့ဥပမာတစ်ခုနဲ့ ရှင်းပြပါ။
+2. Container နဲ့ Virtual Machine တို့ရဲ့ Kernel အသုံးပြုပုံ ဘယ်လိုကွာခြားသလဲ။
+3. Type 1 နဲ့ Type 2 Hypervisor တို့ရဲ့ အလုပ်လုပ်ပုံကို ပုံဆွဲပြီး နှိုင်းယှဉ်ရှင်းပြပါ။
+4. Container Image ထဲမှာ Software Dependency တွေ ထည့်သွင်းထားခြင်းက Deployment ကို ဘယ်လိုအထောက်အကူပြုသလဲ။ ဘယ်အချက်တွေကိုတော့ သီးခြားစီမံဖို့ လိုအပ်သေးသလဲ။
+5. `chroot()` က ဘာကို ပြောင်းလဲပေးသလဲ။ ဘာကြောင့် `chroot()` တစ်ခုတည်းနဲ့ လုံခြုံတဲ့ Container Environment တစ်ခု မတည်ဆောက်နိုင်သလဲ။
+6. FreeBSD Jails နဲ့ Solaris Zones တို့ကို Linux Namespaces နဲ့ အတွင်းပိုင်းလုပ်ဆောင်ပုံ တူညီတယ်လို့ ဘာကြောင့် မပြောသင့်သလဲ။
+7. LXC နဲ့ Docker တို့ရဲ့ ရည်ရွယ်ချက်နဲ့ အဓိကအခန်းကဏ္ဍ ဘယ်လိုကွာခြားသလဲ။
+8. OCI ရဲ့ Specification သုံးမျိုးက ဘယ်လိုပြဿနာတွေကို ဖြေရှင်းပေးသလဲ။
+9. Namespace နဲ့ cgroups တို့ရဲ့ တာဝန်ကို လက်တွေ့ဥပမာတစ်ခုနဲ့ ခွဲခြားရှင်းပြပါ။
+10. Linux Capabilities က Root Permission တွေကို ဘယ်လိုခွဲခြားစီမံပေးသလဲ။
+11. Container Image ရဲ့ Default Configuration နဲ့ Container တစ်ခုချင်းစီအတွက် Runtime Configuration တို့ ဘယ်လိုကွာခြားသလဲ။
+12. OCI Runtime မှာ `create` နဲ့ `start` ကို ဘာကြောင့် သီးခြားအဆင့်တွေအဖြစ် ခွဲထားသလဲ။
+13. Kata Containers ကို အသုံးပြုထားတဲ့အခါ Container တွေက Host Kernel ကို အတူမျှဝေသုံးတယ်ဆိုတဲ့ အယူအဆကို ဘယ်လိုနားလည်သင့်သလဲ။
+
+## 13. Chapter 01 အနှစ်ချုပ်
+
+ဒီအခန်းမှာ Linux Container နည်းပညာ ဘာကြောင့်ပေါ်လာခဲ့သလဲ၊ Application တွေကို ဘယ်လိုသီးခြားခွဲပြီး Run လုပ်နိုင်သလဲနဲ့ Linux Kernel က ဘယ်လိုကူညီပေးနေသလဲဆိုတာကို လေ့လာခဲ့ပါတယ်။
+
+ပုံမှန် Linux OS-level Container တစ်ခုဟာ ကိုယ်ပိုင် Guest Kernel ရှိတဲ့ Virtual Machine တစ်ခု မဟုတ်ပါဘူး။ Host ရဲ့ Linux Kernel ကို မျှဝေသုံးပြီး Application တွေအတွက် သီးခြားပတ်ဝန်းကျင်တစ်ခု ပြင်ဆင်ပေးထားခြင်းဖြစ်ပါတယ်။
+
+ဒီလိုပတ်ဝန်းကျင်တစ်ခု ဖန်တီးရာမှာ Namespace က Process တွေ မြင်ရတဲ့ Resource တွေကို ခွဲခြားပေးပြီး cgroups က CPU၊ Memory နဲ့ အခြား Resource တွေရဲ့ အသုံးပြုမှုကို ထိန်းချုပ်ပေးပါတယ်။
+
+Capabilities က လိုအပ်တဲ့ Permission တွေကိုသာ ပေးနိုင်အောင် ကူညီပေးသလို Filesystem နဲ့ Mount Setting တွေက Container တစ်ခုစီမှာ ကိုယ်ပိုင် Filesystem ရှိသလို အသုံးပြုနိုင်အောင် ပြင်ဆင်ပေးပါတယ်။ Seccomp နဲ့ LSM တို့ကလည်း လိုအပ်တဲ့ Security Control တွေကို ထပ်မံပေးနိုင်ပါတယ်။
+
+Container Image က Application အတွက် လိုအပ်တဲ့ File တွေနဲ့ Default Configuration တွေကို စုစည်းထားတဲ့ Package ဖြစ်ပါတယ်။ Container က အဲဒီ Image ကို အသုံးပြုပြီး ဖန်တီးထားတဲ့ Instance ဖြစ်ပြီး Runtime က Container ကို အမှန်တကယ် စတင်အလုပ်လုပ်စေပါတယ်။ Engine သို့မဟုတ် Manager ကတော့ ဒီ Component တွေကို ချိတ်ဆက်စီမံပေးပါတယ်။
+
+Docker ကို အသုံးပြုတဲ့အခါ CLI၊ Docker Engine၊ `containerd`၊ Shim နဲ့ `runc` တို့က Linux Kernel နဲ့ ပူးပေါင်းပြီး Container ကို စတင်အလုပ်လုပ်စေပါတယ်။
+
+နောက်ဆုံးမှာ OCI Runtime ရဲ့ `create`၊ `start`၊ `kill` နဲ့ `delete` လုပ်ဆောင်ချက်တွေဟာ Container Lifecycle အတွက် အရေးကြီးတဲ့ အဆင့်တွေဖြစ်ကြောင်းကိုလည်း လေ့လာခဲ့ပါတယ်။
+
+Container ကို ကောင်းကောင်းနားလည်ချင်တယ်ဆိုရင် Container Tool တွေရဲ့ Command တွေကိုသာ သိထားရုံနဲ့ မလုံလောက်ပါဘူး။ အောက်ခံ Linux Kernel၊ Process နဲ့ System Call တွေ ဘယ်လိုအလုပ်လုပ်သလဲဆိုတာကိုပါ နားလည်ဖို့ လိုအပ်ပါတယ်။
+
+ဒါကြောင့် နောက် Chapter မှာ Linux Process နဲ့ System Call တွေအကြောင်းကို ဆက်လက်လေ့လာသွားပါမယ်။
+
+## 14. ကိုးကားရင်းမြစ်များ
+
+ဒီအခန်းမှာ ရက်စွဲ၊ Linux Kernel Mechanism နဲ့ Container Architecture ဆိုင်ရာ အချက်တွေကို အောက်ပါရင်းမြစ်တွေနဲ့ ချိတ်ဆက်ဖော်ပြထားပါတယ်။ စာပိုဒ်အတွင်းက `[နံပါတ်]` ကို ကြည့်ပြီး သက်ဆိုင်ရာရင်းမြစ်ကို ရှာနိုင်ပါတယ်။
+
+### Container သမိုင်းနှင့် Operating System များ
+
+1. [The Linux Foundation — A Brief Look at the Roots of Linux Containers](https://www.linuxfoundation.org/blog/blog/a-brief-look-at-the-roots-of-linux-containers) — `chroot` သမိုင်းနဲ့ အစောပိုင်း Container နည်းပညာများ။
+2. [Linux man-pages — chroot(2)](https://man7.org/linux/man-pages/man2/chroot.2.html) — `chroot()` ရဲ့ လုပ်ဆောင်ပုံနဲ့ ကန့်သတ်ချက်များ။
+3. [FreeBSD Foundation — An Introduction to FreeBSD Jails](https://freebsdfoundation.org/resource/an-introduction-to-freebsd-jails/) — FreeBSD 4.0 မှာ Jails ပါဝင်လာခြင်းနဲ့ Jails ရဲ့ ခွဲခြားမှုများ။
+4. [Oracle — What's New in the Solaris 10 3/05 Release](https://docs.oracle.com/cd/E19957-01/820-2714/chapter1-1a/index.html) — Solaris Zones ကို Solaris 10 3/05 မှာ မိတ်ဆက်ခဲ့ခြင်း။
+5. [Linux Containers Project — LXC](https://github.com/lxc/lxc) — LXC Project ရဲ့ ဖွံ့ဖြိုးတိုးတက်မှုနဲ့ System Container ရည်ရွယ်ချက်။
+6. [Docker — Docker: Nine Years YOUNG](https://www.docker.com/blog/docker-nine-years-young/) — 2013 မတ်လ 15 ရက် Public Demo။
+7. [Docker Documentation — Engine Prior Releases](https://docs.docker.com/engine/release-notes/prior-releases/) — Docker 0.1.0 ပထမဆုံး Public Release ရက်စွဲ။
+8. [Open Container Initiative — About OCI](https://opencontainers.org/about/overview/) — OCI ကို စတင်ဖွဲ့စည်းခဲ့သည့် ရက်စွဲနဲ့ Specification သုံးမျိုး။
+
+### Linux Kernel နှင့် Security Mechanisms
+
+9. [Linux man-pages — namespaces(7)](https://man7.org/linux/man-pages/man7/namespaces.7.html) — Linux Namespace အမျိုးအစားများနဲ့ Isolation ပုံစံ။
+10. [Linux Kernel Documentation — Control Group v2](https://docs.kernel.org/admin-guide/cgroup-v2.html) — cgroups နဲ့ Resource Control။
+11. [Linux man-pages — capabilities(7)](https://man7.org/linux/man-pages/man7/capabilities.7.html) — Linux Capabilities နဲ့ Privilege ခွဲခြားမှု။
+12. [Linux Kernel Documentation — Seccomp BPF](https://docs.kernel.org/userspace-api/seccomp_filter.html) — System Call Filtering။
+13. [Linux Kernel Documentation — Linux Security Module Usage](https://docs.kernel.org/admin-guide/LSM/index.html) — LSM Framework၊ SELinux နဲ့ AppArmor ဆိုင်ရာ အချက်များ။
+
+### OCI နှင့် Container Runtime Architecture
+
+14. [Open Container Initiative — Runtime Specification](https://github.com/opencontainers/runtime-spec) — OCI Bundle၊ `create`၊ `start`၊ `kill` နဲ့ `delete` လုပ်ဆောင်ချက်များ။
+15. [Open Container Initiative — Image Specification](https://github.com/opencontainers/image-spec) — OCI Image Manifest၊ Layer နဲ့ Configuration။
+16. [Open Container Initiative — Distribution Specification](https://github.com/opencontainers/distribution-spec) — Registry နဲ့ Content Distribution API။
+17. [Docker Documentation — Docker Engine](https://docs.docker.com/engine/) — Docker CLI၊ API နဲ့ `dockerd` Client–Server Architecture။
+18. [containerd — Runtime v2](https://containerd.org/docs/2.4/runtime-v2/) — `containerd`၊ Shim နဲ့ Low-level Runtime တို့ရဲ့ ဆက်နွယ်ပုံ။
+19. [Docker Documentation — docker container stop](https://docs.docker.com/reference/cli/docker/container/stop/) — Docker Stop Signal၊ Grace Period နဲ့ `SIGKILL` အသုံးပြုပုံ။
+20. [Kata Containers Documentation](https://katacontainers.io/) — Lightweight VM အခြေခံ Container Runtime။
