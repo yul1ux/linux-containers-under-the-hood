@@ -100,7 +100,7 @@ Process တစ်ခုက နောက်ထပ် Process တစ်ခုက�
 
 ဥပမာ Desktop Environment က Terminal Emulator ကို စတင်ပေးနိုင်ပါတယ်။ Terminal Emulator က Shell ကို စတင်ပေးပြီး Shell ကနေ `ps` ဒါမှမဟုတ် `sleep` လို Command တစ်ခုကို Run လုပ်လိုက်တဲ့အခါ Shell က Child Process တစ်ခု ဖန်တီးနိုင်ပါတယ်။
 
-```text
+```mermaid
 flowchart TD
     A["System Manager (PID 1)"] --> B["Desktop Session"]
     B --> C["Terminal Emulator"]
@@ -141,7 +141,7 @@ System Call တစ်ခု ခေါ်လိုက်တဲ့အခါ CPU �
 
 ဒီလုပ်ငန်းစဉ်ကို အလွယ်နားလည်ဖို့ အောက်ပါပုံကို ကြည့်နိုင်ပါတယ်။
 
-```text
+```mermaid
 flowchart TD
     A["Application"] --> B["C Library / POSIX Interface"]
     B --> C["System Call Interface"]
@@ -184,16 +184,15 @@ Linux မှာ Process အသစ်တစ်ခု ဖန်တီးဖို�
 
 `fork()` ရဲ့ စိတ်ဝင်စားစရာကောင်းတဲ့ အချက်က Parent နဲ့ Child တို့မှာ Return Value မတူတာ ဖြစ်ပါတယ်။ Parent Process ထဲမှာ `fork()` က Child ရဲ့ PID ကို ပြန်ပေးပါတယ်။ Child Process ထဲမှာတော့ သုညကို ပြန်ပေးပါတယ်။ Process အသစ်ဖန်တီးမှု မအောင်မြင်ခဲ့ရင် Parent ဘက်မှာ `-1` ကို ပြန်ပေးပြီး Error အကြောင်းကို `errno` ထဲမှာ သတ်မှတ်ပေးပါတယ်။
 
-```text
-Parent Process
-      |
-      | fork()
-      |
-      +----------------------+
-      |                      |
-      v                      v
-Parent ဆက်အလုပ်လုပ်      Child အသစ်ဖြစ်လာ
-Return = Child PID       Return = 0
+```mermaid
+flowchart TD
+    A["Parent Process"] --> B["fork()"]
+    B --> C["Parent ဆက်အလုပ်လုပ်: Child PID ပြန်ရ"]
+    B --> D["Child Process အသစ်: 0 ပြန်ရ"]
+    D --> E["execve(): Program အသစ်နဲ့ အစားထိုး"]
+    E --> F["Child အလုပ်ပြီး Exit"]
+    C --> G["waitpid(): Child ပြီးဆုံးမှုကို စောင့်ပြီး Reap လုပ်"]
+    F --> G
 ```
 
 Linux မှာ Source Code ထဲက `fork()` ကို `strace` မှာလည်း `fork()` လို့ပဲ အမြဲမြင်ရမယ်လို့ မထင်ပါနဲ့။ glibc ရဲ့ NPTL Implementation မှာ `fork()` Wrapper က အောက်ခံ `clone()` System Call ကို အသုံးပြုနိုင်တာကြောင့် Trace Output ထဲမှာ `clone()` ကို တွေ့နိုင်ပါတယ်။
@@ -377,7 +376,7 @@ Container အတွင်း PID 1 အဖြစ် အလုပ်လုပ်�
 
 တချို့ Container Engine တွေက Grace Period လို့ခေါ်တဲ့ စောင့်ဆိုင်းချိန်တစ်ခု သတ်မှတ်ပေးပါတယ်။ အဲဒီအချိန်အတွင်း Application က မရပ်သေးဘူးဆိုရင် `SIGKILL` ကို ပို့ပြီး အတင်းအဆုံးသတ်စေနိုင်ပါတယ်။ ဒါပေမဲ့ စောင့်ဆိုင်းချိန် ဘယ်လောက်ထားမလဲ၊ Signal ကို PID 1 ဆီပို့မလား၊ Process Group ဆီပို့မလား၊ ဘယ်အချိန်မှာ Force Stop လုပ်မလဲဆိုတာဟာ Engine၊ Runtime နဲ့ Configuration အလိုက် ကွာခြားနိုင်ပါတယ်။
 
-```text
+```mermaid
 flowchart TD
     A["Container Manager / Runtime"] -->|"SIGTERM"| B["Container PID 1"]
     B -->|"Signal Forwarding"| C["Application / Child Processes"]
