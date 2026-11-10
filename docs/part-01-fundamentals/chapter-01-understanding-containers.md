@@ -5,9 +5,6 @@
 > **Lab status:** Designed, not tested
 
 
-**Linux Containers Under the Hood**  
-*Part I — Container Fundamentals*
-
 
 ## 1. Container ကို ဘာကြောင့် အသုံးပြုလာကြသလဲ။
 
