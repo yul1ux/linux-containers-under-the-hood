@@ -4,10 +4,6 @@
 > **Research snapshot:** 9 November 2026  
 > **Lab status:** Designed, not tested
 
-*Linux Containers Under the Hood · Part I — Container Fundamentals*
-
-**Linux မှာ Program တွေ ဘယ်လိုအလုပ်လုပ်ကြသလဲ။**
-
 ---
 
 ## 1. Container နားလည်ဖို့ Process ကို ဘာကြောင့် သိထားရမလဲ။
