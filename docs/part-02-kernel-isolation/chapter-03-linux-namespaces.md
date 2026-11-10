@@ -4,10 +4,6 @@
 > **Research snapshot:** 10 November 2026  
 > **Lab status:** Designed, not tested
 
-*Linux Containers Under the Hood · Part II — Linux Kernel and Isolation*
-
-**Container တစ်ခုစီက ကိုယ့် Process၊ Network နဲ့ Hostname ကို သီးခြားစီ မြင်နေရတာ ဘယ်လိုဖြစ်နိုင်သလဲ။**
-
 ---
 
 ## 1. Container တစ်ခုချင်းစီက ဘာကို ခွဲခြားထားဖို့ လိုသလဲ။
