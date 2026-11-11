@@ -1,7 +1,7 @@
 # Chapter 02 — Linux Processes and System Calls
 
-> **Chapter status:** Revised manuscript — 9 November 2026  
-> **Research snapshot:** 9 November 2026  
+> **Chapter status:** Revised manuscript — 11 November 2026  
+> **Research snapshot:** 11 November 2026  
 > **Lab status:** Designed, not tested
 
 ---
@@ -84,9 +84,42 @@ Linux Kernel အမြင်မှာ Thread တစ်ခုချင်းစ�
 
 ဥပမာ Thread A က Memory ထဲမှာ Data တစ်ခုကို ပြောင်းလဲလိုက်ရင် အဲဒီ Memory ကို အတူမျှဝေသုံးနေတဲ့ Thread B ကလည်း ပြောင်းလဲထားတဲ့ Data ကို မြင်နိုင်ပါတယ်။ ဒီလိုမျှဝေသုံးနိုင်ခြင်းက Thread တွေကြား Data ဖလှယ်ရတာ လွယ်ကူစေပါတယ်။ ဒါပေမဲ့ Thread အများအပြားက တူညီတဲ့ Data ကို တစ်ပြိုင်နက် ပြောင်းလဲဖို့ ကြိုးစားတဲ့အခါ အစီအစဉ်မမှန်တာ၊ Data မကိုက်ညီတာနဲ့ Lock ဆိုင်ရာ ပြဿနာတွေ ဖြစ်နိုင်ပါတယ်။
 
-Linux မှာ Thread တစ်ခုချင်းစီကို TID (Thread ID) နဲ့ ခွဲခြားသတ်မှတ်ပါတယ်။ Multithreaded Process တစ်ခုလုံးကို ကိုယ်စားပြုတဲ့ နံပါတ်ကို TGID (Thread Group ID) လို့ ခေါ်ပါတယ်။ ပုံမှန်အားဖြင့် `getpid()` က Process တစ်ခုလုံးရဲ့ PID/TGID ကို ပြန်ပေးပြီး `gettid()` က လက်ရှိ Thread ရဲ့ TID ကို ပြန်ပေးပါတယ်။ Thread တစ်ခုတည်းသာရှိတဲ့ Program မှာ PID နဲ့ TID တူညီနေနိုင်ပေမဲ့ Thread အများအပြားရှိလာတဲ့အခါ TID တစ်ခုစီ မတူတော့ပါဘူး။
+Linux မှာ Thread တစ်ခုချင်းစီကို TID (Thread ID) နဲ့ ခွဲခြားသတ်မှတ်ပါတယ်။ POSIX Thread တွေရဲ့ shared နဲ့ per-thread attribute တွေကို [pthreads(7)](https://man7.org/linux/man-pages/man7/pthreads.7.html) မှာလည်း ကြည့်နိုင်ပါတယ်။ Multithreaded Process တစ်ခုလုံးကို ကိုယ်စားပြုတဲ့ နံပါတ်ကို TGID (Thread Group ID) လို့ ခေါ်ပါတယ်။ ပုံမှန်အားဖြင့် `getpid()` က Process တစ်ခုလုံးရဲ့ PID/TGID ကို ပြန်ပေးပြီး `gettid()` က လက်ရှိ Thread ရဲ့ TID ကို ပြန်ပေးပါတယ်။ Thread တစ်ခုတည်းသာရှိတဲ့ Program မှာ PID နဲ့ TID တူညီနေနိုင်ပေမဲ့ Thread အများအပြားရှိလာတဲ့အခါ TID တစ်ခုစီ မတူတော့ပါဘူး။
 
 ဒီကွာခြားချက်ကို သိထားဖို့ အရေးကြီးပါတယ်။ `ps` နဲ့ `/proc` ကို အသုံးပြုတဲ့အခါ Process တစ်ခုလို့ မြင်ရပေမဲ့ အတွင်းမှာ Thread အများအပြား အလုပ်လုပ်နေနိုင်ပါတယ်။ နောက်ပိုင်း Container Process တွေကို စစ်ဆေးတဲ့အခါ ဒီအချက်က အထောက်အကူဖြစ်လာပါလိမ့်မယ်။
+
+Process တစ်ခုနဲ့ Thread အများအပြားရဲ့ ဆက်နွယ်မှုကို ပုံနဲ့ကြည့်ရင် ပိုရှင်းလာပါလိမ့်မယ်။ အောက်ပါပုံမှာ Thread သုံးခုပါတဲ့ Process တစ်ခုကို ဥပမာပြထားပါတယ်။
+
+```mermaid
+flowchart TB
+    subgraph PROCESS["Process · TGID / PID = 4200"]
+        direction TB
+        VM["Shared virtual address space<br/>Code · Global data · Heap"]
+        FD["Shared process resources<br/>Open file descriptors · Current directory"]
+        T1["Thread 1 · TID = 4200<br/>Own stack · Registers · TLS"]
+        T2["Thread 2 · TID = 4201<br/>Own stack · Registers · TLS"]
+        T3["Thread 3 · TID = 4202<br/>Own stack · Registers · TLS"]
+        VM --- T1
+        VM --- T2
+        VM --- T3
+        FD --- T1
+        FD --- T2
+        FD --- T3
+    end
+```
+
+ပုံမှာ တွေ့ရတဲ့အတိုင်း Thread တွေဟာ Code၊ Global Data နဲ့ Heap တို့ပါဝင်တဲ့ Virtual Address Space ကို အတူအသုံးပြုကြပါတယ်။ Open File Descriptor တွေနဲ့ Current Working Directory လို Process-wide Resource တွေကိုလည်း မျှဝေသုံးနိုင်ပါတယ်။ ဒါပေမဲ့ Thread တစ်ခုစီမှာ ကိုယ်ပိုင် Stack၊ CPU Register State နဲ့ Thread-local Storage (TLS) ရှိပါတယ်။
+
+အောက်ပါဇယားက Process နဲ့ Thread ကို ဘယ်အချက်တွေမှာ ခွဲခြားရမလဲဆိုတာ အတိုချုပ် ပြထားပါတယ်။
+
+| အချက် | Process | Thread (Process တစ်ခုအတွင်း) |
+|---|---|---|
+| Memory | ပုံမှန်အားဖြင့် ကိုယ်ပိုင် Virtual Address Space ရှိတယ်။ Process မတူသူတွေက Shared Memory ကို သီးခြားသတ်မှတ်မှသာ မျှဝေနိုင်တယ်။ | တူညီတဲ့ Process ရဲ့ Address Space ကို အတူအသုံးပြုတယ်။ |
+| Identity | PID / TGID နဲ့ ကိုယ်စားပြုတယ်။ | Thread တစ်ခုစီမှာ ကိုယ်ပိုင် TID ရှိတယ်။ |
+| Execution State | Thread တစ်ခု သို့မဟုတ် အများအပြား ပါဝင်နိုင်တယ်။ | ကိုယ်ပိုင် Stack၊ Register State နဲ့ TLS ရှိတယ်။ |
+| Data မျှဝေမှု | IPC သို့မဟုတ် Shared Memory ကို အသုံးပြုနိုင်တယ်။ | Shared Memory ကနေ တိုက်ရိုက်ဖလှယ်နိုင်ပေမဲ့ Synchronization လိုတယ်။ |
+
+ဒီဇယားနဲ့ ပုံကို တွဲကြည့်ရင် အရေးကြီးတဲ့ ကွာခြားချက်တစ်ခုကို သတိထားမိပါလိမ့်မယ်။ Thread တွေဟာ Memory ကို အတူမျှဝေသုံးနိုင်တာကြောင့် Data ဖလှယ်ရတာ လွယ်ကူပေမဲ့ တစ်ပြိုင်နက် ပြင်ဆင်ရေးသားတဲ့အခါ Race Condition ဖြစ်နိုင်ပါတယ်။ ဒါကြောင့် Mutex၊ Condition Variable နဲ့ အခြား Synchronization Mechanism တွေကို သင့်တော်သလို အသုံးပြုရပါတယ်။
 
 ## 6. PID၊ PPID နဲ့ Process Tree
 
@@ -105,7 +138,7 @@ flowchart TD
     D --> F["sleep"]
 ```
 
-ဒီပုံဟာ Process Tree ကို နားလည်ဖို့ ရိုးရှင်းအောင် ပြထားတဲ့ ဥပမာသာ ဖြစ်ပါတယ်။ Linux Desktop အမျိုးအစားနဲ့ Session စီမံပုံအလိုက် အစီအစဉ်ကွာနိုင်ပါတယ်။ ထို့အပြင် PID 1 ဟာ Host System ရဲ့ အမြစ် Process ဖြစ်နိုင်သလို သီးခြား PID Namespace တစ်ခုအတွင်းမှာလည်း PID 1 ရှိနိုင်ပါတယ်။ PID Namespace အတွင်းက PID 1 နဲ့ orphaned Child Process တွေ ဘယ်လိုဆက်စပ်သလဲဆိုတာကို Linux ရဲ့ [pid_namespaces(7)](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html) မှာ ပိုမိုအသေးစိတ် ဖတ်ရှုနိုင်ပါတယ်။
+ဒီပုံဟာ Process Tree ကို နားလည်ဖို့ ရိုးရှင်းအောင် ပြထားတဲ့ ဥပမာသာ ဖြစ်ပါတယ်။ Linux Desktop အမျိုးအစားနဲ့ Session စီမံပုံအလိုက် အစီအစဉ်ကွာနိုင်ပါတယ်။ ထို့အပြင် PID 1 ဟာ Host System ရဲ့ အမြစ် Process ဖြစ်နိုင်သလို သီးခြား PID Namespace တစ်ခုအတွင်းမှာလည်း PID 1 ရှိနိုင်ပါတယ်။
 
 ကိုယ့်လက်ရှိ Shell ရဲ့ PID နဲ့ PPID ကို အောက်ပါ Command နဲ့ ကြည့်နိုင်ပါတယ်။
 
@@ -152,7 +185,7 @@ flowchart TD
 
 အလားတူ `malloc()` ဟာ Program အတွက် Memory တောင်းဆိုရာမှာ အသုံးပြုတဲ့ Library Function ဖြစ်ပါတယ်။ ဒါပေမဲ့ Memory အသစ်တကယ်လိုအပ်လာတဲ့အခါမှ `brk()` သို့မဟုတ် `mmap()` လို System Call တွေကို အသုံးပြုနိုင်ပါတယ်။ ဒါကြောင့် C Library Function တစ်ခု ခေါ်လိုက်တိုင်း System Call တစ်ခုတိတိ ဖြစ်တယ်လို့ မယူဆသင့်ပါဘူး။
 
-ဒီကွာခြားချက်ကို နားလည်ထားရင် `strace` နဲ့ Program တစ်ခုကို Trace လုပ်တဲ့အခါ Source Code ထဲမှာ မြင်ရတဲ့ Function Name နဲ့ Kernel ဆီ တကယ်ဝင်သွားတဲ့ System Call Name မတူနိုင်တာကို နားလည်လာပါမယ်။ ဒီကွာခြားချက်ကို [fork(2)](https://man7.org/linux/man-pages/man2/fork.2.html) နဲ့ [clone(2)](https://man7.org/linux/man-pages/man2/clone.2.html) ရဲ့ Manual တွေမှာလည်း တွေ့နိုင်ပါတယ်။
+ဒီကွာခြားချက်ကို နားလည်ထားရင် `strace` နဲ့ Program တစ်ခုကို Trace လုပ်တဲ့အခါ Source Code ထဲမှာ မြင်ရတဲ့ Function Name နဲ့ Kernel ဆီ တကယ်ဝင်သွားတဲ့ System Call Name မတူနိုင်တာကို နားလည်လာပါမယ်။
 
 ### 7.1 Process နဲ့ သက်ဆိုင်တဲ့ Function များကို ခွဲခြားနားလည်ခြင်း
 
@@ -162,7 +195,7 @@ Linux မှာ Process တွေကို ဖန်တီးခြင်း၊ 
 
 `clone()` က Linux-specific Interface ဖြစ်ပြီး Parent နဲ့ Child ကြား Memory၊ File Descriptor စတဲ့ Resource တွေကို ဘယ်လိုမျှဝေမလဲဆိုတာ Flag တွေနဲ့ သတ်မှတ်နိုင်ပါတယ်။ သို့သော် glibc ရဲ့ `clone()` Wrapper နဲ့ Kernel ရဲ့ Raw `clone` System Call တို့ဟာ အသုံးပြုပုံ မတူညီနိုင်တာကို သတိပြုပါ။
 
-`clone3()` ကတော့ Linux 5.3 မှာ စတင်ပါဝင်လာတဲ့ ပိုမိုအသစ်ဖြစ်တဲ့ System Call ဖြစ်ပါတယ်။ `struct clone_args` ဆိုတဲ့ အချက်အလက်အစုကို အသုံးပြုပြီး Flag၊ Stack၊ PID Descriptor နဲ့ cgroup ဆိုင်ရာ Parameter အချို့ကို ပေးပို့နိုင်ပါတယ်။ glibc မှာ သီးခြား `clone3()` Wrapper မရှိတဲ့အတွက် `syscall()` ကနေ ခေါ်ယူရတဲ့ ပုံစံကို တွေ့ရနိုင်ပါတယ်။ အသုံးပြုမယ့် Kernel က `clone3()` ကို မပံ့ပိုးသေးရင် `ENOSYS` Error ပြန်ရနိုင်ပါတယ်။ အချက်အလက်အပြည့်အစုံကို Linux ရဲ့ [clone(2)](https://man7.org/linux/man-pages/man2/clone.2.html) Manual မှာ ကြည့်နိုင်ပါတယ်။
+`clone3()` ကတော့ Linux 5.3 မှာ စတင်ပါဝင်လာတဲ့ ပိုမိုအသစ်ဖြစ်တဲ့ System Call ဖြစ်ပါတယ်။ `struct clone_args` ဆိုတဲ့ အချက်အလက်အစုကို အသုံးပြုပြီး Flag၊ Stack၊ PID Descriptor နဲ့ cgroup ဆိုင်ရာ Parameter အချို့ကို ပေးပို့နိုင်ပါတယ်။ glibc မှာ သီးခြား `clone3()` Wrapper မရှိတဲ့အတွက် `syscall()` ကနေ ခေါ်ယူရတဲ့ ပုံစံကို တွေ့ရနိုင်ပါတယ်။ အသုံးပြုမယ့် Kernel က `clone3()` ကို မပံ့ပိုးသေးရင် `ENOSYS` Error ပြန်ရနိုင်ပါတယ်။
 
 `execve()` က လက်ရှိ Process ထဲက Program ကို အစားထိုးပေးတဲ့ System Call ဖြစ်ပါတယ်။ `wait()` နဲ့ `waitpid()` ကတော့ Child Process ရဲ့ အခြေအနေကို စောင့်ကြည့်ပြီး ပြီးဆုံးမှုအချက်အလက်ကို ရယူပေးပါတယ်။
 
@@ -205,20 +238,27 @@ Thread အများအပြားရှိတဲ့ Process တစ်ခု�
 
 ### 8.2 Copy-on-Write (CoW)
 
-`fork()` ခေါ်တဲ့အခါ Parent ရဲ့ Memory အားလုံးကို Child အတွက် ချက်ချင်းကူးပေးတယ်လို့ မယူဆပါနဲ့။ Linux က Copy-on-Write (CoW) နည်းလမ်းကို အသုံးပြုပြီး အစပိုင်းမှာ Parent နဲ့ Child တို့ရဲ့ Private Memory Page အချို့ကို အတူမျှဝေသုံးစေနိုင်ပါတယ်။ တစ်ဖက်ဖက်က အဲဒီ Page ကို ပြောင်းလဲရေးသားဖို့ ကြိုးစားတဲ့အခါမှ Kernel က သက်ဆိုင်ရာ Page ကို ကူးယူပြီး သီးခြားအသုံးပြုစေပါတယ်။
+`fork()` ရဲ့ Memory ဆိုင်ရာ behavior ကို [fork(2)](https://man7.org/linux/man-pages/man2/fork.2.html) မှာလည်း ဖတ်ရှုနိုင်ပါတယ်။ `fork()` ခေါ်တဲ့အခါ Parent ရဲ့ Memory အားလုံးကို Child အတွက် ချက်ချင်းကူးပေးတယ်လို့ မယူဆပါနဲ့။ Linux က Copy-on-Write (CoW) နည်းလမ်းကို အသုံးပြုပြီး အစပိုင်းမှာ Parent နဲ့ Child တို့ရဲ့ Private Memory Page အချို့ကို အတူမျှဝေသုံးစေနိုင်ပါတယ်။ တစ်ဖက်ဖက်က အဲဒီ Page ကို ပြောင်းလဲရေးသားဖို့ ကြိုးစားတဲ့အခါမှ Kernel က သက်ဆိုင်ရာ Page ကို ကူးယူပြီး သီးခြားအသုံးပြုစေပါတယ်။
 
 စာအုပ်တစ်အုပ်ကို လူနှစ်ယောက် အတူဖတ်နေတယ်လို့ စိတ်ကူးကြည့်ပါ။ တစ်ယောက်ယောက်က စာအုပ်ထဲမှာ စာရေးချင်လာတဲ့အခါ မူရင်းစာအုပ်ကို မပြောင်းလဲစေဘဲ ကိုယ်ပိုင်မိတ္တူတစ်ခု လုပ်ပြီး ရေးနိုင်ပါတယ်။ CoW ကလည်း ဒီသဘောတရားနဲ့ ဆင်တူပါတယ်။
 
-```text
-fork() ပြီးပြီးချင်း
-Parent Memory  ----+
-                   +---- Physical Memory Page များကို မျှဝေထား
-Child Memory   ----+
-
-Parent က Page တစ်ခုကို ပြင်ဆင်ရေးသားချိန်
-Parent Memory  -------- သီးခြား Copy Page
-Child Memory   -------- မူလ Page ကို ဆက်သုံး
+```mermaid
+flowchart TB
+    subgraph SHARED["fork() ပြီးချင်း · Private writable page"]
+        P["Parent mapping<br/>COW-protected"] --> PAGE_A["Physical Page A<br/>value = 10"]
+        C["Child mapping<br/>COW-protected"] --> PAGE_A
+    end
+    C -->|"Child က value = 20 ရေးရန် ကြိုးစား"| FAULT["Write-protection page fault"]
+    FAULT --> COPY["Kernel က မူလ Page ကို Copy လုပ်"]
+    COPY --> PAGE_B["Physical Page B<br/>မူလတန်ဖိုး = 10"]
+    PAGE_B -->|"Child mapping ကို Page B ဆီ ပြောင်း"| CHILD_MAP["Child page-table mapping"]
+    CHILD_MAP -->|"Instruction ကို ပြန်စမ်းပြီး Write လုပ်"| WRITE["Child က value = 20 ရေးပြီး<br/>Page B ကို ပြောင်းလဲ"]
+    PAGE_A --> PARENT_OLD["Parent mapping က Page A ကို ဆက်သုံး<br/>value = 10"]
 ```
+
+ဒီပုံမှာ Child က အရင်ဆုံး Page ကို ပြင်ဆင်တဲ့အခြေအနေကို ပြထားပါတယ်။ `fork()` ပြီးချင်း Parent နဲ့ Child ရဲ့ Private writable mapping နှစ်ခုက Physical Page တစ်ခုတည်းကို ညွှန်းနေပါတယ်။ Child က အဲဒီ Page ကို ရေးဖို့ ကြိုးစားတဲ့အခါ Kernel က Write-protection Page Fault ကို ကိုင်တွယ်ပြီး သက်ဆိုင်ရာ Page ကို Copy လုပ်ပေးပါတယ်။ အဲဒီနောက် Child ရဲ့ Mapping ကို Page အသစ်ဆီ ပြောင်းပေးပြီး Parent ကတော့ မူလ Page ကို ဆက်အသုံးပြုပါတယ်။
+
+ဒီလို Page Fault ဖြစ်တာဟာ Application အတွက် ပြဿနာတစ်ခု ဖြစ်သွားတယ်လို့ မဆိုလိုပါဘူး။ Kernel က နောက်ကွယ်မှာ ကိုင်တွယ်ဖြေရှင်းပေးတဲ့ လုပ်ငန်းစဉ် ဖြစ်ပါတယ်။ ဒီဥပမာက Private writable Page တစ်ခုကို အခြေခံထားတာဖြစ်ပြီး Process တစ်ဖက်ဖက်က အရင် Write လုပ်တဲ့အခါ အဲဒီဘက်အတွက် Copy ဖန်တီးပေးတာ ဖြစ်ပါတယ်။
 
 ဒီနည်းလမ်းကြောင့် Memory အားလုံးကို ချက်ချင်း ထပ်ကူးစရာမလိုတော့ပါဘူး။ သို့သော် `fork()` ဟာ ကုန်ကျစရိတ် လုံးဝမရှိဘူးလို့ မဆိုလိုပါဘူး။ Page Table နဲ့ Process ဆိုင်ရာ အချက်အလက်တွေကို ပြင်ဆင်ရတာကြောင့် အခြားကုန်ကျစရိတ်တွေ ရှိနေဆဲပါ။
 
@@ -287,7 +327,7 @@ Parent Process တစ်ခုက Child Process အသစ်ဖန်တီး�
 
 Child Process တစ်ခု အဆုံးသတ်သွားတဲ့အခါ Kernel က Parent က နောက်မှ ပြန်ယူနိုင်ဖို့ ပြီးဆုံးမှုဆိုင်ရာ အချက်အလက်အချို့ကို ခဏထိန်းသိမ်းထားပါတယ်။ Parent က `wait()` ဒါမှမဟုတ် `waitpid()` ကို ခေါ်ပြီး အဲဒီအချက်အလက်ကို ရယူတဲ့ လုပ်ငန်းစဉ်ကို Reap လုပ်ခြင်းလို့ ခေါ်ပါတယ်။
 
-`wait()` က Parent ရဲ့ Child Process တစ်ခုခု အဆုံးသတ်သွားတာကို စောင့်ပြီး အဲဒီ Process ရဲ့ ပြီးဆုံးမှုအခြေအနေကို ပြန်ပေးပါတယ်။ `waitpid()` ကတော့ ဘယ် Child ကို စောင့်မလဲဆိုတာကို ပိုမိုတိကျစွာ ရွေးချယ်နိုင်ပါတယ်။ ဒါ့အပြင် မပြီးသေးရင် စောင့်နေမလား၊ ချက်ချင်းပြန်လာမလားဆိုတာကိုလည်း Option တွေနဲ့ ထိန်းချုပ်နိုင်ပါတယ်။
+`wait()` နဲ့ `waitpid()` ရဲ့ အပြုအမူကို [wait(2)](https://man7.org/linux/man-pages/man2/wait.2.html) မှာ အသေးစိတ် ဖတ်နိုင်ပါတယ်။ `wait()` က Parent ရဲ့ Child Process တစ်ခုခု အဆုံးသတ်သွားတာကို စောင့်ပြီး အဲဒီ Process ရဲ့ ပြီးဆုံးမှုအခြေအနေကို ပြန်ပေးပါတယ်။ `waitpid()` ကတော့ ဘယ် Child ကို စောင့်မလဲဆိုတာကို ပိုမိုတိကျစွာ ရွေးချယ်နိုင်ပါတယ်။ ဒါ့အပြင် မပြီးသေးရင် စောင့်နေမလား၊ ချက်ချင်းပြန်လာမလားဆိုတာကိုလည်း Option တွေနဲ့ ထိန်းချုပ်နိုင်ပါတယ်။
 
 ဥပမာ `waitpid(pid, &status, 0)` ဆိုရင် သတ်မှတ်ထားတဲ့ PID ရှိတဲ့ Child Process အဆုံးသတ်တဲ့အထိ စောင့်နေပါတယ်။ `WNOHANG` ကို ထည့်သုံးထားရင် Child က မပြီးသေးတဲ့အခါ Parent ကို အချိန်အကြာကြီး စောင့်မနေစေဘဲ ချက်ချင်းပြန်လာနိုင်ပါတယ်။
 
@@ -311,9 +351,32 @@ Zombie Process နဲ့ မတူတဲ့ အခြေအနေတစ်ခု
 
 ဥပမာ Parent Process တစ်ခုက Child Process ကို အလုပ်တစ်ခု လုပ်ခိုင်းထားတယ်ဆိုပါစို့။ Child က အလုပ်လုပ်နေဆဲအချိန်မှာ Parent က ရပ်တန့်သွားတယ်ဆိုရင် Child ဟာ မူလ Parent မရှိတော့တဲ့အခြေအနေ ဖြစ်လာပါတယ်။ ဒါပေမဲ့ Child Process က ဆက်လက်အလုပ်လုပ်နေနိုင်ပါတယ်။
 
-Linux က ဒီလို Parent မရှိတော့တဲ့ Child ကို သင့်တော်တဲ့ အခြား Reaper Process တစ်ခုဆီ ပြန်လည်ချိတ်ဆက်ပေးပါတယ်။ ပုံမှန်အားဖြင့် Init Process က တာဝန်ယူနိုင်သလို `PR_SET_CHILD_SUBREAPER` ကို သတ်မှတ်ထားတဲ့ အနီးဆုံး Ancestor Process တစ်ခုကလည်း တာဝန်ယူနိုင်ပါတယ်။ Container အတွင်းမှာတော့ သက်ဆိုင်ရာ PID Namespace ရဲ့ PID 1 က ဒီတာဝန်ကို ယူနိုင်ပါတယ်။
+Linux က ဒီလို Parent မရှိတော့တဲ့ Child ကို သင့်တော်တဲ့ အခြား Reaper Process တစ်ခုဆီ ပြန်လည်ချိတ်ဆက်ပေးပါတယ်။ အသေးစိတ်ကို [pid_namespaces(7)](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html) မှာလည်း ရှင်းပြထားပါတယ်။ ပုံမှန်အားဖြင့် Init Process က တာဝန်ယူနိုင်သလို `PR_SET_CHILD_SUBREAPER` ကို သတ်မှတ်ထားတဲ့ အနီးဆုံး Ancestor Process တစ်ခုကလည်း တာဝန်ယူနိုင်ပါတယ်။ Container အတွင်းမှာတော့ သက်ဆိုင်ရာ PID Namespace ရဲ့ PID 1 က ဒီတာဝန်ကို ယူနိုင်ပါတယ်။
 
 Zombie နဲ့ Orphan ကို မရောထွေးဖို့ အရေးကြီးပါတယ်။ Zombie ဆိုတာ အလုပ်ပြီးသွားပြီး Parent က အဲဒီအကြောင်းကို မယူရသေးတဲ့ Process ဖြစ်ပါတယ်။ Orphan ဆိုတာ မူလ Parent က အရင်ဆုံး ရပ်သွားလို့ အခြား Reaper တစ်ခုဆီ ပြန်လည်ချိတ်ဆက်ပေးရတဲ့ အသက်ရှင်နေဆဲ Process ဖြစ်နိုင်ပါတယ်။ Orphan ဟာ နောက်ပိုင်းမှာ ကိုယ့်အလုပ်ကို ပုံမှန်ဆက်လုပ်နိုင်ပါတယ်။
+
+ဒီအခြေအနေနှစ်ခုကို သီးခြားအဆင့်တွေအဖြစ် ကြည့်ရင် ပိုမိုရှင်းလင်းပါတယ်။ Child က အရင်ဆုံး Exit လုပ်ရင် Parent က `wait()` မခေါ်သေးတဲ့အချိန် Zombie ဖြစ်နေပါတယ်။ Parent က အရင်ဆုံး Exit လုပ်ရင်တော့ Child က Orphan ဖြစ်ပြီး ဆက်လက် Run နေနိုင်ပါတယ်။ အဲဒီ Orphan Child က နောက်ပိုင်း Exit လုပ်တဲ့အခါ သူ့ကို လက်ခံထားတဲ့ Parent အသစ်က `wait()` မခေါ်မချင်း Zombie အဖြစ် ခဏကျန်နေနိုင်ပါတယ်။
+
+```mermaid
+flowchart TB
+    subgraph ZOMBIE_CASE["Case A · Child က အရင်ဆုံး Exit"]
+        P1["Parent အသက်ရှင်နေဆဲ"] --> C1["Child running"]
+        C1 -->|"Child exit"| Z1["Zombie<br/>Exit status နှင့် PID ကို ထိန်းထား"]
+        P1 -->|"wait() / waitpid()"| R1["Reaped<br/>Kernel က ကျန် Process record ကို ရှင်းလင်း"]
+        Z1 --> R1
+    end
+    subgraph ORPHAN_CASE["Case B · Parent က အရင်ဆုံး Exit"]
+        P2["မူလ Parent exit"] --> O["Orphan Child<br/>ဆက်လက် Run နေနိုင်"]
+        O --> RP["အနီးဆုံး ancestor subreaper<br/>မရှိပါက Parent ၏ PID Namespace ထဲက init"]
+        RP --> C2["Child ဆက်လက်အလုပ်လုပ်"]
+        C2 -->|"Child exit"| Z2["Zombie<br/>Parent အသစ်က wait() မခေါ်ရသေး"]
+        Z2 --> R2["Reaped<br/>Parent အသစ်က Status ရယူ"]
+    end
+```
+
+ဒီနေရာမှာ `Orphan` နဲ့ `Zombie` ဟာ အဓိပ္ပာယ်တူတဲ့ Process State နှစ်မျိုး မဟုတ်ပါဘူး။ `Orphan` က မူလ Parent မရှိတော့တဲ့ Parent–Child Relationship ကို ဖော်ပြတာဖြစ်ပြီး `Zombie` ကတော့ Child အလုပ်ပြီးဆုံးသွားပေမဲ့ Exit Information ကို Parent က မရယူရသေးတဲ့ အခြေအနေကို ဖော်ပြတာပါ။
+
+အနီးဆုံး Ancestor တစ်ခုက `PR_SET_CHILD_SUBREAPER` သတ်မှတ်ထားရင် Orphan Child ကို အဲဒီ Subreaper က လက်ခံနိုင်ပါတယ်။ မရှိရင် ပုံမှန်အားဖြင့် မူလ Parent ရဲ့ PID Namespace အတွင်းက Init Process ဆီ Reparent လုပ်ပါတယ်။ ဒီ Subreaper behavior ကို [PR_SET_CHILD_SUBREAPER(2const)](https://man7.org/linux/man-pages/man2/PR_SET_CHILD_SUBREAPER.2const.html) မှာလည်း ဖတ်နိုင်ပါတယ်။ Parent နဲ့ Child တို့ PID Namespace မတူတဲ့အခြေအနေတွေမှာ ဒီ Init Process ဟာ Child ရဲ့ ကိုယ်ပိုင် Namespace ထဲက PID 1 မဟုတ်ဘဲ Parent ရဲ့ PID Namespace ထဲက Init ဖြစ်နိုင်ပါတယ်။ ဒီအချက်ကို Chapter 03 ရဲ့ PID Namespace အပိုင်းနဲ့ ဆက်စပ်ပြီး နားလည်ထားဖို့ လိုပါတယ်။
 
 ## 12. Signal တွေနဲ့ Process Lifecycle
 
@@ -368,7 +431,7 @@ Namespace အပြင်ဘက်က အထက်အဆင့် PID Namespace 
 
 Container တစ်ခုကို ရပ်တန့်ချင်တဲ့အခါ Container Manager သို့မဟုတ် Runtime က အတွင်းက Process တွေကို ရပ်ဖို့ Signal ပို့ပေးနိုင်ပါတယ်။ အသုံးများတဲ့ လုပ်ဆောင်ပုံတစ်ခုက `SIGTERM` ကို အရင်ပို့ပြီး Application ကို အလုပ်သိမ်းဖို့ အချိန်ပေးခြင်း ဖြစ်ပါတယ်။
 
-Container အတွင်း PID 1 အဖြစ် အလုပ်လုပ်နေတဲ့ Program က Signal ကို လက်ခံပြီး အတွင်းက Child Application ဆီ ဆက်ပို့ပေးဖို့ လိုအပ်နိုင်ပါတယ်။ ဒီလုပ်ဆောင်ချက်ကို Signal Forwarding လို့ ခေါ်ပါတယ်။ Application တွေ အဆုံးသတ်သွားတဲ့အခါ PID 1 က `wait()` Family ကို အသုံးပြုပြီး Child တွေရဲ့ ပြီးဆုံးမှုကို ပြန်လည်ရယူကာ Reap လုပ်ပေးရပါတယ်။ PID Namespace အတွင်း orphan ဖြစ်သွားတဲ့ Child တွေကို ဘယ်သူက လက်ခံရမလဲဆိုတဲ့ စည်းမျဉ်းကို [pid_namespaces(7)](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html) မှာ ဖော်ပြထားပါတယ်။
+Container အတွင်း PID 1 အဖြစ် အလုပ်လုပ်နေတဲ့ Program က Signal ကို လက်ခံပြီး အတွင်းက Child Application ဆီ ဆက်ပို့ပေးဖို့ လိုအပ်နိုင်ပါတယ်။ ဒီလုပ်ဆောင်ချက်ကို Signal Forwarding လို့ ခေါ်ပါတယ်။ Application တွေ အဆုံးသတ်သွားတဲ့အခါ PID 1 က `wait()` Family ကို အသုံးပြုပြီး Child တွေရဲ့ ပြီးဆုံးမှုကို ပြန်လည်ရယူကာ Reap လုပ်ပေးရပါတယ်။
 
 တချို့ Container Engine တွေက Grace Period လို့ခေါ်တဲ့ စောင့်ဆိုင်းချိန်တစ်ခု သတ်မှတ်ပေးပါတယ်။ အဲဒီအချိန်အတွင်း Application က မရပ်သေးဘူးဆိုရင် `SIGKILL` ကို ပို့ပြီး အတင်းအဆုံးသတ်စေနိုင်ပါတယ်။ ဒါပေမဲ့ စောင့်ဆိုင်းချိန် ဘယ်လောက်ထားမလဲ၊ Signal ကို PID 1 ဆီပို့မလား၊ Process Group ဆီပို့မလား၊ ဘယ်အချိန်မှာ Force Stop လုပ်မလဲဆိုတာဟာ Engine၊ Runtime နဲ့ Configuration အလိုက် ကွာခြားနိုင်ပါတယ်။
 
@@ -489,7 +552,7 @@ flowchart TD
 
 ဥပမာ containerd ရဲ့ Runtime v2 ပုံစံမှာ Daemon က Runtime Shim နဲ့ ဆက်သွယ်ပြီး Shim က `runc` လို Runtime ကို ခေါ်ယူနိုင်ပါတယ်။ containerd က Container ကို တိုက်ရိုက် Launch လုပ်တာထက် Higher-level Manager အဖြစ် အလုပ်လုပ်ပြီး Shim နဲ့ Runtime တို့က Container Lifecycle ကို ဆောင်ရွက်ပေးတာ ဖြစ်ပါတယ်။ ဒီပုံစံဟာ containerd ရဲ့ Implementation ဖြစ်ပြီး Runtime အားလုံးမှာ မဖြစ်မနေ ဒီအတိုင်း အလုပ်လုပ်ရမယ်လို့ မဆိုလိုပါဘူး။ အသေးစိတ်ကို [containerd Runtime v2 Documentation](https://containerd.io/docs/main/runtime-v2/) မှာ ဖတ်နိုင်ပါတယ်။
 
-Child Process တွေကို ဘယ်သူက Reap လုပ်ပေးသလဲဆိုတာကို "PID 1၊ Subreaper၊ Shim" လို့ တစ်စုတည်း သတ်မှတ်လို့ မရပါဘူး။ ပုံမှန်အားဖြင့် Orphan ဖြစ်သွားတဲ့ Child ဟာ သူ့ Parent ရဲ့ PID Namespace အတွင်းက PID 1 ဆီ Reparent လုပ်ခံရနိုင်ပါတယ်။ သို့သော် အနီးဆုံး Ancestor တစ်ခုက `PR_SET_CHILD_SUBREAPER` သတ်မှတ်ထားရင် အဲဒီ Subreaper က Child ကို လက်ခံရနိုင်ပါတယ်။ containerd ရဲ့ `containerd-shim-runc-v2` ဟာ Subreaper အဖြစ် လုပ်ဆောင်နိုင်ပေမဲ့ Container က Shim နဲ့ သီးခြား PID Namespace အသုံးပြုထားတဲ့အခါ Container Init Process က သူ့ Namespace အတွင်း orphan ဖြစ်သွားတဲ့ Process တွေကို Reap လုပ်ပေးရပါမယ်။ ဒီကွာခြားချက်ကို [pid_namespaces(7)](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html) နဲ့ [containerd Runtime v2](https://containerd.io/docs/main/runtime-v2/) မှာ ဖတ်ရှုနိုင်ပါတယ်။
+Child Process တွေကို ဘယ်သူက Reap လုပ်ပေးသလဲဆိုတာကို “PID 1၊ Subreaper၊ Shim” လို့ တစ်စုတည်း သတ်မှတ်လို့ မရပါဘူး။ ပုံမှန်အားဖြင့် Orphan ဖြစ်သွားတဲ့ Child ဟာ သူ့ Parent ရဲ့ PID Namespace အတွင်းက PID 1 ဆီ Reparent လုပ်ခံရနိုင်ပါတယ်။ သို့သော် အနီးဆုံး Ancestor တစ်ခုက `PR_SET_CHILD_SUBREAPER` သတ်မှတ်ထားရင် အဲဒီ Subreaper က Child ကို လက်ခံရနိုင်ပါတယ်။ `containerd-shim-runc-v2` ဟာ Subreaper အဖြစ် လုပ်ဆောင်နိုင်ပေမဲ့ Container က Shim နဲ့ သီးခြား PID Namespace အသုံးပြုထားတဲ့အခါ Container Init Process က သူ့ Namespace အတွင်း orphan ဖြစ်သွားတဲ့ Process တွေကို Reap လုပ်ပေးရပါမယ်။ ဒီကွာခြားချက်ကို [pid_namespaces(7)](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html) နဲ့ [containerd Runtime v2](https://containerd.io/docs/main/runtime-v2/) မှာ ဖတ်ရှုနိုင်ပါတယ်။
 
 အရေးကြီးဆုံးအချက်က Container ထဲမှာ Run နေတဲ့ Application ဟာ နောက်ဆုံးမှာ Linux Kernel က စီမံပေးနေတဲ့ Process သို့မဟုတ် Task ဖြစ်နေဆဲပါပဲ။
 
@@ -662,9 +725,9 @@ int main(void)
 
 ဒီ Program မှာ ပထမဆုံး Parent Process က ကိုယ့် PID ကို ပြသပါတယ်။ ပြီးတဲ့အခါ `fork()` ကို ခေါ်ပြီး Child Process အသစ်တစ်ခု ဖန်တီးပါတယ်။ `fork()` ရဲ့ Return Value ကို စစ်ဆေးပြီး Parent လား၊ Child လား ခွဲခြားထားပါတယ်။
 
-Child Process ဖြစ်တဲ့အပိုင်းမှာ ကိုယ့် PID နဲ့ Parent ရဲ့ PID ကို ပြသပါတယ်။ အဲဒီနောက် `execlp()` ကို အသုံးပြုပြီး `sleep 2` ဆိုတဲ့ Program ကို အစားထိုး Run လုပ်ပါတယ်။ `execlp()` ဟာ `exec` Family ထဲက Function တစ်ခုဖြစ်ပြီး နောက်ကွယ်မှာ `execve()` ကို အသုံးပြုပါတယ်။ အစားထိုးမှု အောင်မြင်ရင် မူလ C Code ရဲ့ အောက်ပိုင်းကို ဆက်မလုပ်တော့ပါဘူး။ အသေးစိတ်ကို [execve(2)](https://man7.org/linux/man-pages/man2/execve.2.html) မှာ ဖတ်ရှုနိုင်ပါတယ်။ `execlp()` ပြန်ရောက်လာတယ်ဆိုရင် Error ဖြစ်တာကို ဆိုလိုတဲ့အတွက် `perror()` နဲ့ အကြောင်းရင်းကို ပြပြီး `_exit(127)` နဲ့ Child ကို အဆုံးသတ်ပါတယ်။
+Child Process ဖြစ်တဲ့အပိုင်းမှာ ကိုယ့် PID နဲ့ Parent ရဲ့ PID ကို ပြသပါတယ်။ အဲဒီနောက် `execlp()` ကို အသုံးပြုပြီး `sleep 2` ဆိုတဲ့ Program ကို အစားထိုး Run လုပ်ပါတယ်။ `execlp()` ဟာ `exec` Family ထဲက Function တစ်ခုဖြစ်ပြီး နောက်ကွယ်မှာ `execve()` ကို အသုံးပြုပါတယ်။ အစားထိုးမှု အောင်မြင်ရင် မူလ C Code ရဲ့ အောက်ပိုင်းကို ဆက်မလုပ်တော့ပါဘူး။ `execlp()` ပြန်ရောက်လာတယ်ဆိုရင် Error ဖြစ်တာကို ဆိုလိုတဲ့အတွက် `perror()` နဲ့ အကြောင်းရင်းကို ပြပြီး `_exit(127)` နဲ့ Child ကို အဆုံးသတ်ပါတယ်။
 
-Parent Process ကတော့ Child ရဲ့ PID ကို မှတ်ထားပြီး `waitpid()` နဲ့ အလုပ်ပြီးဆုံးတာကို စောင့်ပါတယ်။ ဒီလိုစောင့်ဆိုင်းပြီး Exit Status ကို ရယူတဲ့ လုပ်ဆောင်ပုံကို [wait(2)](https://man7.org/linux/man-pages/man2/wait.2.html) မှာ အသေးစိတ် ရှင်းပြထားပါတယ်။ `waitpid()` က Signal တစ်ခုကြောင့် ယာယီပြတ်တောက်နိုင်တဲ့အတွက် `errno` ဟာ `EINTR` ဖြစ်နေသေးရင် ထပ်မံစောင့်ဖို့ Loop ထည့်ထားပါတယ်။ Child ပြီးဆုံးသွားတဲ့အခါ `WIFEXITED()` နဲ့ ပုံမှန်အတိုင်း ပြီးဆုံးသလား စစ်ပြီး `WEXITSTATUS()` နဲ့ Exit Status ကို ဖတ်ပါတယ်။ Signal ကြောင့် ရပ်တန့်သွားခဲ့ရင် `WIFSIGNALED()` နဲ့ `WTERMSIG()` ကို အသုံးပြုနိုင်ပါတယ်။
+Parent Process ကတော့ Child ရဲ့ PID ကို မှတ်ထားပြီး `waitpid()` နဲ့ အလုပ်ပြီးဆုံးတာကို စောင့်ပါတယ်။ `waitpid()` က Signal တစ်ခုကြောင့် ယာယီပြတ်တောက်နိုင်တဲ့အတွက် `errno` ဟာ `EINTR` ဖြစ်နေသေးရင် ထပ်မံစောင့်ဖို့ Loop ထည့်ထားပါတယ်။ Child ပြီးဆုံးသွားတဲ့အခါ `WIFEXITED()` နဲ့ ပုံမှန်အတိုင်း ပြီးဆုံးသလား စစ်ပြီး `WEXITSTATUS()` နဲ့ Exit Status ကို ဖတ်ပါတယ်။ Signal ကြောင့် ရပ်တန့်သွားခဲ့ရင် `WIFSIGNALED()` နဲ့ `WTERMSIG()` ကို အသုံးပြုနိုင်ပါတယ်။
 
 Program ကို Compile လုပ်ဖို့ အောက်ပါ Command ကို အသုံးပြုပါ။
 
@@ -716,12 +779,7 @@ int main(void)
     printf("Parent: waiting 8 seconds before waitpid()...\n");
     fflush(stdout);
 
-    {
-        unsigned int remaining = 8;
-        while (remaining > 0) {
-            remaining = sleep(remaining);
-        }
-    }
+    sleep(8);
 
     while (waitpid(child_pid, &status, 0) < 0) {
         if (errno == EINTR) {
@@ -751,7 +809,7 @@ ps -o pid,ppid,stat,comm -p CHILD_PID
 
 `CHILD_PID` နေရာမှာ Program က ပြထားတဲ့ နံပါတ်ကို အစားထိုးပါ။ Output ရဲ့ `STAT` ကော်လံမှာ `Z` ပါလာရင် Child Process ဟာ Zombie အခြေအနေမှာ ရှိနေတယ်လို့ ဆိုလိုပါတယ်။ Parent က ရှစ်စက္ကန့်စောင့်ပြီး `waitpid()` ခေါ်လိုက်တဲ့အခါ Child ရဲ့ Exit Status ကို ရယူပြီး Zombie အခြေအနေကို ရှင်းလင်းပေးပါလိမ့်မယ်။
 
-ဒီစမ်းသပ်မှုဟာ ကိုယ်တိုင်ဖန်တီးထားတဲ့ Process တစ်ခုကို ခဏတာ Zombie အဖြစ် မြင်ရအောင် ပြုလုပ်တာသာ ဖြစ်ပါတယ်။ `sleep(8)` ဟာ Signal Handler ကြောင့် အချိန်မပြည့်ခင် ပြန်ထွက်လာနိုင်တာကိုလည်း ထည့်စဉ်းစားထားပါ။ System ထဲက အခြား Zombie Process တွေကို မသိဘဲ Kill လုပ်ဖို့ မကြိုးစားပါနဲ့။ ပုံမှန်အားဖြင့် Zombie ကို ရှင်းလင်းဖို့ Parent Process က `wait()` သို့မဟုတ် `waitpid()` ကို မှန်ကန်စွာ ခေါ်ပေးရတာ ဖြစ်ပါတယ်။
+ဒီစမ်းသပ်မှုဟာ ကိုယ်တိုင်ဖန်တီးထားတဲ့ Process တစ်ခုကို ခဏတာ Zombie အဖြစ် မြင်ရအောင် ပြုလုပ်တာသာ ဖြစ်ပါတယ်။ System ထဲက အခြား Zombie Process တွေကို မသိဘဲ Kill လုပ်ဖို့ မကြိုးစားပါနဲ့။ ပုံမှန်အားဖြင့် Zombie ကို ရှင်းလင်းဖို့ Parent Process က `wait()` သို့မဟုတ် `waitpid()` ကို မှန်ကန်စွာ ခေါ်ပေးရတာ ဖြစ်ပါတယ်။
 
 Lab ပြီးသွားတဲ့အခါ ကိုယ်တိုင်ဖန်တီးထားတဲ့ Source နဲ့ Executable File တွေကိုသာ ဖယ်ရှားနိုင်ပါတယ်။
 
@@ -864,7 +922,8 @@ Container အတွင်းက PID 1 ဟာ Child Process တွေကို �
 - [Linux Containers Under the Hood — Chapter 02: Linux Processes and System Calls](https://yul1ux.github.io/linux-containers-under-the-hood/part-01-fundamentals/chapter-02-linux-processes-and-system-calls/)
 
 ### Linux Process နဲ့ System Call များ
-
+- [pthreads(7)](https://man7.org/linux/man-pages/man7/pthreads.7.html)
+- [PR_SET_CHILD_SUBREAPER(2const)](https://man7.org/linux/man-pages/man2/PR_SET_CHILD_SUBREAPER.2const.html)
 - [fork(2)](https://man7.org/linux/man-pages/man2/fork.2.html)
 - [clone(2)](https://man7.org/linux/man-pages/man2/clone.2.html)
 - [execve(2)](https://man7.org/linux/man-pages/man2/execve.2.html)
