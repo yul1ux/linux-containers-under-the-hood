@@ -917,9 +917,6 @@ Container အတွင်းက PID 1 ဟာ Child Process တွေကို �
 
 ဒီအခန်းမှာ အသုံးပြုထားတဲ့ အကြောင်းအရာတွေကို ပိုမိုအသေးစိတ် လေ့လာချင်ရင် အောက်ပါ Official Documentation နဲ့ Technical Reference တွေကို ဆက်လက်ဖတ်ရှုနိုင်ပါတယ်။
 
-### မူရင်းစာအုပ်
-
-- [Linux Containers Under the Hood — Chapter 02: Linux Processes and System Calls](https://yul1ux.github.io/linux-containers-under-the-hood/part-01-fundamentals/chapter-02-linux-processes-and-system-calls/)
 
 ### Linux Process နဲ့ System Call များ
 - [pthreads(7)](https://man7.org/linux/man-pages/man7/pthreads.7.html)
