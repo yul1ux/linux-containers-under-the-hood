@@ -1,4 +1,3 @@
-
 # Chapter 01 — Understanding Containers
  
 > **Chapter status:** Revised manuscript (v2)  
