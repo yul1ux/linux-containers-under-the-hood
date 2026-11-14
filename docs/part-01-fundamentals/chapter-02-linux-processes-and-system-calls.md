@@ -6,8 +6,6 @@
 
 ---
 
-## 1. Container နားလည်ဖို့ Process ကို ဘာကြောင့် သိထားရမလဲ။
-
 Chapter 01 မှာ ပုံမှန် Linux container ဟာ Linux kernel က စီမံပေးနေတဲ့ ပုံမှန် process ဖြစ်တယ်ဆိုတာ လေ့လာခဲ့ပါတယ်။ ဒီအခန်းမှာ အဲဒီ process ကို Linux က ဘယ်လို ဖန်တီးပြီး၊ စီမံပြီး၊ အဆုံးသတ်သလဲဆိုတာ ကြည့်ပါမယ်။ အဓိကအချက် သုံးချက်ကို အရင်မှတ်ထားပါ။
  
 1. Container ထဲက application ကို စတင်တာဟာ process အသစ်တစ်ခု ဖန်တီးပြီး program ကို အစားထိုးတာ (`fork()`/`clone()` နဲ့ `execve()`) ပါပဲ။ Container runtime က အဲဒီအလုပ်ကို namespace၊ cgroups စတဲ့ kernel feature တွေနဲ့ ပေါင်းစပ်ပြီး လုပ်ပါတယ်။
